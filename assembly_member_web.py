@@ -122,6 +122,7 @@ def highlight_changes(df, snapshot_data):
     snapshot_df = pd.DataFrame([
         {
             '이름': member['국회의원']['이름'],
+            '정당': member['국회의원'].get('정당', '정보 없음'),
             '당선횟수': member['국회의원']['당선횟수'],
             '선거구': member['국회의원']['선거구'],
             '소속위원회': member['국회의원']['소속위원회'],
@@ -140,7 +141,7 @@ def highlight_changes(df, snapshot_data):
         return ''
     
     # 각 열에 대해 변경사항 확인
-    for col in ['이름', '당선횟수', '선거구', '소속위원회', '보좌관', '선임비서관', '비서관']:
+    for col in ['이름', '정당', '당선횟수', '선거구', '소속위원회', '보좌관', '선임비서관', '비서관']:
         df[col] = df.apply(
             lambda row: f'<span class="highlight">{row[col]}</span>' 
             if row['URL'] in snapshot_df['URL'].values 
