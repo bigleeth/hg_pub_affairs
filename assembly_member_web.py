@@ -20,11 +20,37 @@ st.markdown("""
     .highlight {
         background-color: yellow;
     }
+    .info-box {
+        background-color: #f0f0f0;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .copyright {
+        text-align: center;
+        color: #666;
+        font-size: 0.8em;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # 제목
-st.title("국회의원 정보 대시보드")
+st.title("국회의원실 정보 대시보드 (수은 대외팀)")
+
+# 안내 메시지
+st.markdown("""
+<div class="info-box">
+    <h3>📌 안내사항</h3>
+    <ul>
+        <li>노란색으로 표시된 셀은 2025년 4월 기준 대비 변동된 정보입니다.</li>
+        <li>변동사항: 소속위원회 변경, 보좌진 변경 등</li>
+        <li>데이터는 매일 자동으로 업데이트됩니다.</li>
+    </ul>
+</div>
+""", unsafe_allow_html=True)
 
 # 데이터 로드 함수
 @st.cache_data
@@ -157,6 +183,13 @@ def main():
         
         # 페이지 새로고침
         st.experimental_rerun()
+
+    # 저작권 정보
+    st.markdown("""
+    <div class="copyright">
+        © 2025 Taehyun Lee. This dashboard is for non-commercial use only. All rights reserved.
+    </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main() 
