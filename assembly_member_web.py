@@ -174,22 +174,15 @@ def highlight_changes(df, snapshot_data):
             
             # 각 열 비교
             for col in ['이름', '당선횟수', '선거구', '소속위원회', '보좌관', '선임비서관', '비서관']:
-                current_value = row[col]
-                snapshot_value = snapshot_row[col]
-                
-                # 리스트인 경우 문자열로 변환하여 비교
-                if isinstance(current_value, list):
-                    current_value = ', '.join(current_value)
-                if isinstance(snapshot_value, list):
-                    snapshot_value = ', '.join(snapshot_value)
-                
+                current_value = str(row[col])
+                snapshot_value = str(snapshot_row[col])
+
                 # 당선횟수는 처음 두 글자만 비교
                 if col == '당선횟수':
-                    if str(current_value)[:2] != str(snapshot_value)[:2]:
+                    if current_value[:2] != snapshot_value[:2]:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
-                # 다른 열들은 전체 문자열 비교
                 else:
-                    if str(current_value) != str(snapshot_value):
+                    if current_value != snapshot_value:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
     
     # 변경사항 열의 마지막 쉼표 제거
