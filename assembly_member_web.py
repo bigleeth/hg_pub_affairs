@@ -6,7 +6,7 @@ from datetime import datetime
 
 # 페이지 설정
 st.set_page_config(
-    page_title="국회의원 정보",
+    page_title="국회 모니터링(수은 대외팀)",
     page_icon="🏛️",
     layout="wide"
 )
@@ -69,7 +69,7 @@ st.markdown("""
 
 # 제목
 st.markdown("""
-    <h1 style="margin-bottom: 1rem;">국회의원실 정보 대시보드 (수은 대외팀)</h1>
+    <h1 style="margin-bottom: 1rem;">국회 모니터링(수은 대외팀)</h1>
 """, unsafe_allow_html=True)
 
 # 데이터 로드 함수
