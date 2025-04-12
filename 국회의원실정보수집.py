@@ -106,6 +106,8 @@ def extract_member_data(soup, name):
         
         # 정당 정보 설정 (하드코딩된 매핑 사용)
         party = party_mapping.get(name, "정보 없음")
+        if not party:
+            party = "정보 없음"
         
         # 당선횟수 정보 추출
         election_count_element = soup.find('dt', text='당선횟수')
@@ -144,10 +146,11 @@ def extract_member_data(soup, name):
                 elif '비서관' in title:
                     secretary = names
         
-        return {
+        # 반환할 데이터 구조
+        member_data = {
             "국회의원": {
                 "이름": name,
-                "정당": party,  # 정당 정보 추가
+                "정당": party,
                 "당선횟수": election_count,
                 "선거구": district,
                 "소속위원회": committee
@@ -161,12 +164,19 @@ def extract_member_data(soup, name):
                 "수집일시": datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
             }
         }
+        
+        # 정당 정보가 없는 경우 확인
+        if not member_data["국회의원"].get("정당"):
+            member_data["국회의원"]["정당"] = "정보 없음"
+            
+        return member_data
     except Exception as e:
         print(f"오류 발생: {str(e)}")
+        # 오류 발생 시에도 정당 정보 포함
         return {
             "국회의원": {
                 "이름": "정보 없음",
-                "정당": party_mapping.get(name, "정보 없음"),  # 오류 발생 시에도 정당 정보 추가
+                "정당": party_mapping.get(name, "정보 없음"),
                 "당선횟수": "정보 없음",
                 "선거구": "정보 없음",
                 "소속위원회": "정보 없음"
