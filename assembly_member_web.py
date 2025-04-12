@@ -263,7 +263,7 @@ def main():
     <div class="info-box">
         <h3>📌 안내사항</h3>
         <ul>
-            <li>기재위 소속 및 기타 수은 업무 관련 의원실 정보가 반영되어 있습니다.</li>
+            <li>기재위 소속 및 기타 수은 업무 관련 의원실 정보가 나타나 있습니다.</li>
             <li>변경사항은 스냅샷 기준일({snapshot_time}) 대비 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
             <li>데이터는 매일 자동으로 업데이트됩니다.</li>
         </ul>
@@ -289,10 +289,10 @@ def main():
         st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
     with col2:
         password = st.text_input("", type="password", key="snapshot_password", label_visibility="collapsed")
-        if st.button("스냅샷 리셋", key="snapshot_reset", help="비밀번호: 0204"):
+        if st.button("스냅샷 리셋", key="snapshot_reset"):
             if password == "0204":
                 reset_snapshot()
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("잘못된 비밀번호입니다.")
 
