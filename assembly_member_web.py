@@ -156,9 +156,9 @@ def highlight_changes(df, snapshot_data):
             '당선횟수': member['국회의원']['당선횟수'],
             '선거구': member['국회의원']['선거구'],
             '소속위원회': member['국회의원']['소속위원회'],
-            '보좌관': member['보좌관'],  # 리스트 형태로 저장
-            '선임비서관': member['선임비서관'],  # 리스트 형태로 저장
-            '비서관': member['비서관'],  # 리스트 형태로 저장
+            '보좌관': member['보좌관'],
+            '선임비서관': member['선임비서관'],
+            '비서관': member['비서관'],
             'URL': member['메타데이터']['url']
         }
         for member in snapshot_data
@@ -182,14 +182,11 @@ def highlight_changes(df, snapshot_data):
                     if current_value[:2] != snapshot_value[:2]:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
                 elif col in ['보좌관', '선임비서관', '비서관']:
-                    # current_value는 쉼표로 구분된 문자열, snapshot_value는 리스트
-                    current_list = [name.strip() for name in str(current_value).split(',') if name.strip()]
-                    snapshot_list = [name.strip() for name in snapshot_value if isinstance(name, str) and name.strip()]
+                    # 현재 값과 스냅샷 값을 쉼표로 구분된 문자열로 변환하고 공백 제거
+                    current_str = str(current_value).replace(" ", "")
+                    snapshot_str = ','.join(snapshot_value).replace(" ", "")
                     
-                    current_set = set(current_list)
-                    snapshot_set = set(snapshot_list)
-
-                    if current_set != snapshot_set:
+                    if current_str != snapshot_str:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
                 else:
                     # 다른 열들은 문자열로 비교
