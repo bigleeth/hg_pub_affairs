@@ -64,6 +64,14 @@ st.markdown("""
     .sidebar .sidebar-content .stSelectbox {
         font-size: 0.9rem;
     }
+    .small-button {
+        font-size: 0.8em;
+        padding: 0.2em 0.5em;
+        background-color: #f0f0f0;
+        color: #666;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -250,28 +258,43 @@ def main():
         }
     )
     
-    # 스냅샷 리셋 버튼
-    st.sidebar.markdown("---")
-    st.sidebar.header("스냅샷 관리")
-    password = st.sidebar.text_input("비밀번호를 입력하세요", type="password")
-    if st.sidebar.button("스냅샷 리셋"):
-        if password == "0204":
-            reset_snapshot()
-            st.experimental_rerun()
-        else:
-            st.sidebar.error("잘못된 비밀번호입니다.")
-    
     # 안내 메시지
     st.markdown(f"""
     <div class="info-box">
         <h3>📌 안내사항</h3>
         <ul>
-            <li>변경사항은 스냅샷 기준일({snapshot_time}) 대비 달라진 내역을 나타냅니다.</li>
-            <li>(예: 소속위원회 변경, 보좌진 변경 등)</li>
+            <li>기재위 소속 및 기타 수은 업무 관련 의원실 정보가 반영되어 있습니다.</li>
+            <li>변경사항은 스냅샷 기준일({snapshot_time}) 대비 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
             <li>데이터는 매일 자동으로 업데이트됩니다.</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
+
+    # 스냅샷 관리 버튼 (작고 눈에 잘 띄지 않게)
+    st.markdown("""
+    <style>
+    .small-button {
+        font-size: 0.8em;
+        padding: 0.2em 0.5em;
+        background-color: #f0f0f0;
+        color: #666;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
+    with col2:
+        password = st.text_input("", type="password", key="snapshot_password", label_visibility="collapsed")
+        if st.button("스냅샷 리셋", key="snapshot_reset", help="비밀번호: 0204"):
+            if password == "0204":
+                reset_snapshot()
+                st.experimental_rerun()
+            else:
+                st.error("잘못된 비밀번호입니다.")
 
     # 저작권 정보
     st.markdown("""
