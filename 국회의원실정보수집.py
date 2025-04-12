@@ -117,8 +117,8 @@ def extract_member_data(soup, name):
         election_count_element = soup.find('dt', text='당선횟수')
         if election_count_element:
             election_count_text = election_count_element.find_next('dd').text.strip()
-            # "제22대)"까지의 텍스트만 추출
-            election_count = election_count_text.split('제22대)')[0] + '제22대)'
+            # 처음 두 글자만 추출
+            election_count = election_count_text[:2]
         else:
             election_count = "정보 없음"
             
