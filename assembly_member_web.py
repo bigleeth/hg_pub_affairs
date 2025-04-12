@@ -160,7 +160,7 @@ def highlight_changes(df, snapshot_data):
     ])
     
     # 변경된 셀 하이라이트
-    for col in ['이름', '정당', '당선횟수', '선거구', '소속위원회', '보좌관', '선임비서관', '비서관']:
+    for col in ['이름', '당선횟수', '선거구', '소속위원회', '보좌관', '선임비서관', '비서관']:  # '정당' 제외
         df[col] = df.apply(
             lambda row: f'<span class="highlight">{row[col]}</span>' 
             if row['URL'] in snapshot_df['URL'].values 
