@@ -182,9 +182,12 @@ def highlight_changes(df, snapshot_data):
                     if current_value[:2] != snapshot_value[:2]:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
                 elif col in ['보좌관', '선임비서관', '비서관']:
-                    # 현재 값과 스냅샷 값을 쉼표로 구분된 문자열로 변환하고 공백 제거
-                    current_str = str(current_value).replace(" ", "")
-                    snapshot_str = ','.join(snapshot_value).replace(" ", "")
+                    # 현재 값과 스냅샷 값을 정규화: 분할 → 공백 제거 → 정렬 → 재결합
+                    current_list = [x.strip() for x in str(current_value).split(',') if x.strip()]
+                    snapshot_list = [x.strip() for x in snapshot_value if isinstance(x, str) and x.strip()]
+                    
+                    current_str = ','.join(sorted(current_list))
+                    snapshot_str = ','.join(sorted(snapshot_list))
                     
                     if current_str != snapshot_str:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
