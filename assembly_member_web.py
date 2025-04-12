@@ -78,7 +78,7 @@ st.markdown("""
 
 # 제목
 st.markdown("""
-    <h1 style="margin-bottom: 1rem;">🚀국회 모니터링(수은 대외팀)🚀</h1>
+    <h1 style="margin-bottom: 1rem;">🚀국회 모니터링 - 수은 대외팀🚀</h1>
 """, unsafe_allow_html=True)
 
 # 데이터 로드 함수
@@ -230,7 +230,7 @@ def main():
     # 데이터프레임 표시
     if snapshot_data:
         df = highlight_changes(df, snapshot_data)
-        st.markdown("### 📊 국회의원 정보 (변경된 항목이 표시됩니다)")
+        st.markdown("### 📊 국회의원 정보 (변경 항목 표시)")
     else:
         st.markdown("### 📊 국회의원 정보")
     
