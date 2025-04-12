@@ -119,6 +119,7 @@ def load_snapshot():
         with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
             json.dump(current_data, f, ensure_ascii=False, indent=4)
             
+        st.success("현재 데이터가 스냅샷으로 설정되었습니다.")
         return current_data
     except Exception as e:
         st.error(f"스냅샷 로드 중 오류 발생: {str(e)}")
