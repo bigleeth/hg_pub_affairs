@@ -114,25 +114,33 @@ def load_data():
 @st.cache_data
 def load_snapshot():
     try:
-        # GitHub에서 스냅샷 데이터 가져오기
-        response = requests.get('https://raw.githubusercontent.com/your-username/your-repo/main/assembly_member_snapshot.json')
-        if response.status_code == 200:
-            snapshot_data = response.json()
-            # GitHub API를 통해 파일의 마지막 수정 시간 가져오기
-            github_api_url = 'https://api.github.com/repos/your-username/your-repo/contents/assembly_member_snapshot.json'
-            github_response = requests.get(github_api_url)
-            if github_response.status_code == 200:
-                github_data = github_response.json()
-                snapshot_time = datetime.strptime(github_data['last_modified'], '%a, %d %b %Y %H:%M:%S %Z').strftime("%Y년 %m월 %d일")
-            else:
-                snapshot_time = "알 수 없음"
-            return snapshot_data, snapshot_time
+        if os.path.exists('assembly_member_snapshot.json'):
+            with open('assembly_member_snapshot.json', 'r', encoding='utf-8') as f:
+                snapshot_data = json.load(f)
+                # 스냅샷 파일의 생성 시간 가져오기
+                snapshot_time = datetime.fromtimestamp(os.path.getmtime('assembly_member_snapshot.json')).strftime("%Y년 %m월 %d일")
+                return snapshot_data, snapshot_time
         else:
-            st.warning("GitHub에서 스냅샷 파일을 가져오지 못했습니다.")
+            st.warning("스냅샷 파일이 존재하지 않습니다.")
             return None, None
     except Exception as e:
         st.error(f"스냅샷 로드 중 오류 발생: {str(e)}")
         return None, None
+
+# 스냅샷 리셋 함수
+def reset_snapshot(password):
+    if password == "0204":
+        try:
+            with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
+                current_data = json.load(f)
+            with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
+                json.dump(current_data, f, ensure_ascii=False, indent=4)
+            st.success("스냅샷이 성공적으로 업데이트되었습니다.")
+            st.rerun()
+        except Exception as e:
+            st.error(f"스냅샷 업데이트 중 오류 발생: {str(e)}")
+    else:
+        st.error("비밀번호가 올바르지 않습니다.")
 
 # 데이터 비교 및 하이라이트 함수
 def get_flat_string(value):
