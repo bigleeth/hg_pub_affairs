@@ -32,7 +32,7 @@ class AssemblyMemberInfo(QMainWindow):
         self.table = QTableWidget()
         self.table.setColumnCount(9)
         self.table.setHorizontalHeaderLabels([
-            "이름", "당선횟수", "선거구", "소속위원회", 
+            "이름","정당", "당선횟수", "선거구", "소속위원회", 
             "보좌관", "선임비서관", "비서관", "URL", "수집일시"
         ])
         
