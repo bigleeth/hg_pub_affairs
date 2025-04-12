@@ -147,7 +147,7 @@ def extract_member_data(soup, name):
         return {
             "국회의원": {
                 "이름": name,
-                "정당": party,  # 하드코딩된 정당 정보 사용
+                "정당": party,  # 정당 정보 추가
                 "당선횟수": election_count,
                 "선거구": district,
                 "소속위원회": committee
@@ -166,7 +166,7 @@ def extract_member_data(soup, name):
         return {
             "국회의원": {
                 "이름": "정보 없음",
-                "정당": party_mapping.get(name, "정보 없음"),  # 오류 발생 시에도 하드코딩된 정당 정보 사용
+                "정당": party_mapping.get(name, "정보 없음"),  # 오류 발생 시에도 정당 정보 추가
                 "당선횟수": "정보 없음",
                 "선거구": "정보 없음",
                 "소속위원회": "정보 없음"
