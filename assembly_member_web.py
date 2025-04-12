@@ -212,6 +212,7 @@ def main():
         df,
         use_container_width=True,
         hide_index=True,
+        height=500,
         column_config={
             "URL": st.column_config.LinkColumn("URL"),
             "수집일시": st.column_config.DatetimeColumn("수집일시")
