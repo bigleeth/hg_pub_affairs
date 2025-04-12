@@ -69,7 +69,7 @@ st.markdown("""
 
 # 제목
 st.markdown("""
-    <h1 style="margin-bottom: 1rem;">국회 모니터링(수은 대외팀)</h1>
+    <h1 style="margin-bottom: 1rem;">🚀국회 모니터링(수은 대외팀)🚀</h1>
 """, unsafe_allow_html=True)
 
 # 데이터 로드 함수
@@ -119,7 +119,9 @@ def load_snapshot():
         with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
             json.dump(current_data, f, ensure_ascii=False, indent=4)
             
-        st.success("현재 데이터가 스냅샷으로 설정되었습니다.")
+        # 스냅샷 파일의 생성 시간 가져오기
+        snapshot_time = datetime.now().strftime("%Y년 %m월 %d일")
+        st.success(f"현재 데이터가 스냅샷으로 설정되었습니다. (기준일: {snapshot_time})")
         return current_data
     except Exception as e:
         st.error(f"스냅샷 로드 중 오류 발생: {str(e)}")
@@ -245,7 +247,7 @@ def main():
     <div class="info-box">
         <h3>📌 안내사항</h3>
         <ul>
-            <li>노란색으로 표시된 셀은 2025년 4월 기준 대비 변동된 정보입니다.</li>
+            <li>노란색으로 표시된 셀은 스냅샷 기준일 대비 변동된 정보입니다.</li>
             <li>변동사항: 소속위원회 변경, 보좌진 변경 등</li>
             <li>데이터는 매일 자동으로 업데이트됩니다.</li>
         </ul>
