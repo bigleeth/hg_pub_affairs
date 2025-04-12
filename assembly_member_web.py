@@ -230,7 +230,7 @@ def main():
     # 데이터프레임 표시
     if snapshot_data:
         df = highlight_changes(df, snapshot_data)
-        st.markdown("### 📊 국회의원 정보 (변경된 항목이 노란색으로 표시됩니다)")
+        st.markdown("### 📊 국회의원 정보 (변경된 항목이 표시됩니다)")
     else:
         st.markdown("### 📊 국회의원 정보")
     
