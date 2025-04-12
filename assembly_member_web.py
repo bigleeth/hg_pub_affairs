@@ -227,6 +227,40 @@ def main():
     districts = ['전체'] + sorted(df['선거구'].unique().tolist())
     selected_district = st.sidebar.selectbox('선거구', districts)
     
+    # 스냅샷 데이터 표시 버튼
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if st.button("📊 스냅샷 데이터 보기", use_container_width=True):
+            if snapshot_data:
+                # 스냅샷 데이터를 데이터프레임으로 변환
+                snapshot_df = pd.DataFrame([
+                    {
+                        '이름': member['국회의원']['이름'],
+                        '정당': member['국회의원'].get('정당', ''),
+                        '당선횟수': member['국회의원'].get('당선횟수', ''),
+                        '선거구': member['국회의원'].get('선거구', ''),
+                        '소속위원회': member['국회의원'].get('소속위원회', ''),
+                        '보좌관': ','.join(member.get('보좌관', [])),
+                        '선임비서관': ','.join(member.get('선임비서관', [])),
+                        '비서관': ','.join(member.get('비서관', [])),
+                        'URL': member['메타데이터']['url']
+                    }
+                    for member in snapshot_data
+                ])
+                
+                st.write(f"### 스냅샷 데이터 (기준일: {snapshot_time})")
+                st.dataframe(
+                    snapshot_df,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=500,
+                    column_config={
+                        "URL": st.column_config.LinkColumn("URL")
+                    }
+                )
+            else:
+                st.warning("스냅샷 데이터가 없습니다.")
+    
     # 필터링 적용
     filtered_df = df.copy()  # 원본 데이터프레임 복사
     if selected_party != '전체':
@@ -247,38 +281,6 @@ def main():
             "수집일시": st.column_config.DatetimeColumn("수집일시")
         }
     )
-    
-    # 스냅샷 데이터 표시 버튼
-    if st.button("스냅샷 데이터 보기"):
-        if snapshot_data:
-            # 스냅샷 데이터를 데이터프레임으로 변환
-            snapshot_df = pd.DataFrame([
-                {
-                    '이름': member['국회의원']['이름'],
-                    '정당': member['국회의원'].get('정당', ''),
-                    '당선횟수': member['국회의원'].get('당선횟수', ''),
-                    '선거구': member['국회의원'].get('선거구', ''),
-                    '소속위원회': member['국회의원'].get('소속위원회', ''),
-                    '보좌관': ','.join(member.get('보좌관', [])),
-                    '선임비서관': ','.join(member.get('선임비서관', [])),
-                    '비서관': ','.join(member.get('비서관', [])),
-                    'URL': member['메타데이터']['url']
-                }
-                for member in snapshot_data
-            ])
-            
-            st.write(f"### 스냅샷 데이터 (기준일: {snapshot_time})")
-            st.dataframe(
-                snapshot_df,
-                use_container_width=True,
-                hide_index=True,
-                height=500,
-                column_config={
-                    "URL": st.column_config.LinkColumn("URL")
-                }
-            )
-        else:
-            st.warning("스냅샷 데이터가 없습니다.")
     
     # 안내 메시지
     st.markdown(f"""
