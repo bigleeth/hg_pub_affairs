@@ -182,9 +182,9 @@ def highlight_changes(df, snapshot_data):
                     if current_value[:2] != snapshot_value[:2]:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
                 elif col in ['보좌관', '선임비서관', '비서관']:
-                    # 보좌관, 선임비서관, 비서관은 집합으로 비교
-                    current_set = set(str(current_value).replace(' ', '').split(','))
-                    snapshot_set = set(snapshot_value.replace(' ', '').split(','))
+                    # 보좌관, 선임비서관, 비서관은 이름 집합으로 비교
+                    current_set = set([name.strip() for name in str(current_value).split(',') if name.strip()])
+                    snapshot_set = set([name.strip() for name in str(snapshot_value).split(',') if name.strip()])
                     if current_set != snapshot_set:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
                 else:
