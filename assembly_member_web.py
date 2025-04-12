@@ -95,9 +95,9 @@ def load_data():
                 '당선횟수': member['국회의원']['당선횟수'][:2],  # 처음 두 글자만 표시
                 '선거구': member['국회의원']['선거구'],
                 '소속위원회': member['국회의원']['소속위원회'],
-                '보좌관': ', '.join(member['보좌관']),
-                '선임비서관': ', '.join(member['선임비서관']),
-                '비서관': ', '.join(member['비서관']),
+                '보좌관': ','.join(member['보좌관']),  # 쉼표 뒤에 공백 없이 조인
+                '선임비서관': ','.join(member['선임비서관']),
+                '비서관': ','.join(member['비서관']),
                 'URL': member['메타데이터']['url'],
                 '수집일시': member['메타데이터']['수집일시']
             }
@@ -156,9 +156,9 @@ def highlight_changes(df, snapshot_data):
             '당선횟수': member['국회의원']['당선횟수'],
             '선거구': member['국회의원']['선거구'],
             '소속위원회': member['국회의원']['소속위원회'],
-            '보좌관': member['보좌관'],
-            '선임비서관': member['선임비서관'],
-            '비서관': member['비서관'],
+            '보좌관': ','.join(member['보좌관']),  # 쉼표 뒤에 공백 없이 조인
+            '선임비서관': ','.join(member['선임비서관']),
+            '비서관': ','.join(member['비서관']),
             'URL': member['메타데이터']['url']
         }
         for member in snapshot_data
