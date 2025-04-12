@@ -223,38 +223,6 @@ def main():
     else:
         st.markdown("### 📊 국회의원 정보")
     
-    # 데이터프레임 높이 설정
-    st.dataframe(df, height=500)
-    
-    # 스냅샷 데이터 보기
-    with st.expander("📸 스냅샷 원본 보기 (assembly_member_snapshot.json)", expanded=False):
-        if snapshot_data:
-            snapshot_df = pd.DataFrame([
-                {
-                    '이름': member['국회의원']['이름'],
-                    '정당': member['국회의원'].get('정당', ''),
-                    '당선횟수': member['국회의원'].get('당선횟수', '')[:2],
-                    '선거구': member['국회의원'].get('선거구', ''),
-                    '소속위원회': member['국회의원'].get('소속위원회', ''),
-                    '보좌관': ','.join(member.get('보좌관', [])),
-                    '선임비서관': ','.join(member.get('선임비서관', [])),
-                    '비서관': ','.join(member.get('비서관', [])),
-                    'URL': member['메타데이터']['url']
-                }
-                for member in snapshot_data
-            ])
-            st.dataframe(
-                snapshot_df,
-                use_container_width=True,
-                hide_index=True,
-                height=400,
-                column_config={
-                    "URL": st.column_config.LinkColumn("URL")
-                }
-            )
-        else:
-            st.warning("스냅샷 데이터가 없습니다.")
-    
     # 필터링 옵션
     st.sidebar.header("필터")
     
@@ -290,6 +258,35 @@ def main():
             "수집일시": st.column_config.DatetimeColumn("수집일시")
         }
     )
+    
+    # 스냅샷 데이터 보기
+    with st.expander("📸 스냅샷 원본 보기 (assembly_member_snapshot.json)", expanded=False):
+        if snapshot_data:
+            snapshot_df = pd.DataFrame([
+                {
+                    '이름': member['국회의원']['이름'],
+                    '정당': member['국회의원'].get('정당', ''),
+                    '당선횟수': member['국회의원'].get('당선횟수', '')[:2],
+                    '선거구': member['국회의원'].get('선거구', ''),
+                    '소속위원회': member['국회의원'].get('소속위원회', ''),
+                    '보좌관': ','.join(member.get('보좌관', [])),
+                    '선임비서관': ','.join(member.get('선임비서관', [])),
+                    '비서관': ','.join(member.get('비서관', [])),
+                    'URL': member['메타데이터']['url']
+                }
+                for member in snapshot_data
+            ])
+            st.dataframe(
+                snapshot_df,
+                use_container_width=True,
+                hide_index=True,
+                height=400,
+                column_config={
+                    "URL": st.column_config.LinkColumn("URL")
+                }
+            )
+        else:
+            st.warning("스냅샷 데이터가 없습니다.")
     
     # 안내 메시지
     st.markdown(f"""
