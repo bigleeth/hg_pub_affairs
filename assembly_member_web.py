@@ -83,7 +83,7 @@ def load_data():
         df = pd.DataFrame([
             {
                 '이름': member['국회의원']['이름'],
-                '정당': member['국회의원'].get('정당', '정보 없음'),  # 정당 정보가 없는 경우 '정보 없음'으로 설정
+                '정당': member['국회의원'].get('정당', '정보 없음'),
                 '당선횟수': member['국회의원']['당선횟수'],
                 '선거구': member['국회의원']['선거구'],
                 '소속위원회': member['국회의원']['소속위원회'],
@@ -95,6 +95,13 @@ def load_data():
             }
             for member in current_data
         ])
+        
+        # 스냅샷 파일이 없으면 현재 데이터를 스냅샷으로 저장
+        if not os.path.exists('assembly_member_snapshot.json'):
+            with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
+                json.dump(current_data, f, ensure_ascii=False, indent=4)
+            st.info("현재 데이터가 스냅샷으로 저장되었습니다. 이후 변경사항은 이 시점을 기준으로 비교됩니다.")
+        
         return df
     except Exception as e:
         st.error(f"데이터 로드 중 오류 발생: {str(e)}")
