@@ -156,7 +156,7 @@ def highlight_changes(df, snapshot_data):
             '당선횟수': member['국회의원']['당선횟수'],
             '선거구': member['국회의원']['선거구'],
             '소속위원회': member['국회의원']['소속위원회'],
-            '보좌관': ','.join(member['보좌관']),  # 쉼표 뒤에 공백 없이 조인
+            '보좌관': ','.join(member['보좌관']),
             '선임비서관': ','.join(member['선임비서관']),
             '비서관': ','.join(member['비서관']),
             'URL': member['메타데이터']['url']
@@ -177,11 +177,18 @@ def highlight_changes(df, snapshot_data):
                 current_value = str(row[col])
                 snapshot_value = str(snapshot_row[col])
 
-                # 당선횟수는 처음 두 글자만 비교
                 if col == '당선횟수':
+                    # 당선횟수는 처음 두 글자만 비교
                     if current_value[:2] != snapshot_value[:2]:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
+                elif col in ['보좌관', '선임비서관', '비서관']:
+                    # 보좌관, 선임비서관, 비서관은 집합으로 비교
+                    current_set = set(str(current_value).replace(' ', '').split(','))
+                    snapshot_set = set(snapshot_value.replace(' ', '').split(','))
+                    if current_set != snapshot_set:
+                        df.at[idx, '변경사항'] += f'{col} 변경, '
                 else:
+                    # 다른 열들은 문자열로 비교
                     if current_value != snapshot_value:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
     
