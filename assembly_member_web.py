@@ -115,8 +115,49 @@ def load_snapshot():
         with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
             current_data = json.load(f)
             
+        # 정당 정보 매핑
+        party_mapping = {
+            "정태호": "더불어민주당",
+            "김영진": "더불어민주당",
+            "김영환": "더불어민주당",
+            "김태년": "더불어민주당",
+            "박홍근": "더불어민주당",
+            "신영대": "더불어민주당",
+            "안도걸": "더불어민주당",
+            "오기형": "더불어민주당",
+            "윤호중": "더불어민주당",
+            "임광현": "더불어민주당",
+            "정성호": "더불어민주당",
+            "정일영": "더불어민주당",
+            "진성준": "더불어민주당",
+            "황명선": "더불어민주당",
+            "최기상": "더불어민주당",
+            "이언주": "더불어민주당",
+            "유동수": "더불어민주당",
+            "강훈식": "더불어민주당",
+            "김상훈": "국민의힘",
+            "윤한홍": "국민의힘",
+            "신동욱": "국민의힘",
+            "송언석": "국민의힘",
+            "박수영": "국민의힘",
+            "구자근": "국민의힘",
+            "박대출": "국민의힘",
+            "박성훈": "국민의힘",
+            "박수민": "국민의힘",
+            "이인선": "국민의힘",
+            "이종욱": "국민의힘",
+            "최은석": "국민의힘",
+            "차규근": "조국혁신당",
+            "천하람": "개혁신당"
+        }
+            
         # 스냅샷 파일이 없거나 업데이트가 필요한 경우
         if not os.path.exists('assembly_member_snapshot.json'):
+            # 정당 정보가 없는 경우 추가
+            for member in current_data:
+                if member['국회의원'].get('정당') == '정보 없음':
+                    member['국회의원']['정당'] = party_mapping.get(member['국회의원']['이름'], '정보 없음')
+                    
             with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
                 json.dump(current_data, f, ensure_ascii=False, indent=4)
             st.info("현재 데이터가 스냅샷으로 저장되었습니다. 이후 변경사항은 이 시점을 기준으로 비교됩니다.")
@@ -126,6 +167,11 @@ def load_snapshot():
         with open('assembly_member_snapshot.json', 'r', encoding='utf-8') as f:
             snapshot_data = json.load(f)
             
+        # 정당 정보가 없는 경우 추가
+        for member in snapshot_data:
+            if member['국회의원'].get('정당') == '정보 없음':
+                member['국회의원']['정당'] = party_mapping.get(member['국회의원']['이름'], '정보 없음')
+                
         return snapshot_data
     except Exception as e:
         st.error(f"스냅샷 로드 중 오류 발생: {str(e)}")
@@ -220,7 +266,7 @@ def main():
         filtered_df,
         use_container_width=True,
         hide_index=True,
-        height=700,
+        height=500,
         column_config={
             "URL": st.column_config.LinkColumn("URL"),
             "수집일시": st.column_config.DatetimeColumn("수집일시")
