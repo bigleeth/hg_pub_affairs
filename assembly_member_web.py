@@ -26,7 +26,7 @@ st.markdown("""
         color: #666;
     }
     .info-box h3 {
-        color: #444;
+        color: #666;
         margin-bottom: 10px;
     }
     .info-box ul {
