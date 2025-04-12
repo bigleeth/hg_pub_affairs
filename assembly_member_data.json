@@ -894,3 +894,6 @@
         }
     }
 ]
+
+if len(current_data) != len(snapshot_data):
+    st.warning("현재 데이터와 스냅샷 데이터의 구조가 일치하지 않습니다. 스냅샷을 업데이트합니다.")

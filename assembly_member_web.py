@@ -83,7 +83,7 @@ def load_data():
         df = pd.DataFrame([
             {
                 '이름': member['국회의원']['이름'],
-                '정당': member['국회의원']['정당'],  # 정당 정보 직접 사용
+                '정당': member['국회의원'].get('정당', '정보 없음'),
                 '당선횟수': member['국회의원']['당선횟수'],
                 '선거구': member['국회의원']['선거구'],
                 '소속위원회': member['국회의원']['소속위원회'],
@@ -98,9 +98,62 @@ def load_data():
         
         # 스냅샷 파일이 없으면 현재 데이터를 스냅샷으로 저장
         if not os.path.exists('assembly_member_snapshot.json'):
+            # 스냅샷 데이터 구조를 현재 데이터와 동일하게 설정
+            snapshot_data = [
+                {
+                    "국회의원": {
+                        "이름": member['국회의원']['이름'],
+                        "정당": member['국회의원'].get('정당', '정보 없음'),
+                        "당선횟수": member['국회의원']['당선횟수'],
+                        "선거구": member['국회의원']['선거구'],
+                        "소속위원회": member['국회의원']['소속위원회']
+                    },
+                    "보좌관": member['보좌관'],
+                    "선임비서관": member['선임비서관'],
+                    "비서관": member['비서관'],
+                    "메타데이터": {
+                        "url": member['메타데이터']['url'],
+                        "status_code": member['메타데이터']['status_code'],
+                        "수집일시": member['메타데이터']['수집일시']
+                    }
+                }
+                for member in current_data
+            ]
             with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
-                json.dump(current_data, f, ensure_ascii=False, indent=4)
+                json.dump(snapshot_data, f, ensure_ascii=False, indent=4)
             st.info("현재 데이터가 스냅샷으로 저장되었습니다. 이후 변경사항은 이 시점을 기준으로 비교됩니다.")
+        else:
+            # 스냅샷 파일이 있는 경우 구조 확인
+            with open('assembly_member_snapshot.json', 'r', encoding='utf-8') as f:
+                snapshot_data = json.load(f)
+            
+            # 현재 데이터와 스냅샷 데이터의 구조가 일치하는지 확인
+            if len(current_data) != len(snapshot_data):
+                st.warning("현재 데이터와 스냅샷 데이터의 구조가 일치하지 않습니다. 스냅샷을 업데이트합니다.")
+                # 스냅샷 업데이트
+                snapshot_data = [
+                    {
+                        "국회의원": {
+                            "이름": member['국회의원']['이름'],
+                            "정당": member['국회의원'].get('정당', '정보 없음'),
+                            "당선횟수": member['국회의원']['당선횟수'],
+                            "선거구": member['국회의원']['선거구'],
+                            "소속위원회": member['국회의원']['소속위원회']
+                        },
+                        "보좌관": member['보좌관'],
+                        "선임비서관": member['선임비서관'],
+                        "비서관": member['비서관'],
+                        "메타데이터": {
+                            "url": member['메타데이터']['url'],
+                            "status_code": member['메타데이터']['status_code'],
+                            "수집일시": member['메타데이터']['수집일시']
+                        }
+                    }
+                    for member in current_data
+                ]
+                with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
+                    json.dump(snapshot_data, f, ensure_ascii=False, indent=4)
+                st.info("스냅샷이 업데이트되었습니다.")
         
         return df
     except Exception as e:
@@ -129,7 +182,7 @@ def highlight_changes(df, snapshot_data):
     snapshot_df = pd.DataFrame([
         {
             '이름': member['국회의원']['이름'],
-            '정당': member['국회의원']['정당'],  # 정당 정보 직접 사용
+            '정당': member['국회의원'].get('정당', '정보 없음'),
             '당선횟수': member['국회의원']['당선횟수'],
             '선거구': member['국회의원']['선거구'],
             '소속위원회': member['국회의원']['소속위원회'],
