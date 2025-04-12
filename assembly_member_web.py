@@ -23,7 +23,18 @@ st.markdown("""
     .info-box {
         padding: 15px;
         margin-top: 20px;
-        color: #333;
+        color: #666;
+    }
+    .info-box h3 {
+        color: #444;
+        margin-bottom: 10px;
+    }
+    .info-box ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+    .info-box li {
+        margin-bottom: 5px;
     }
     .copyright {
         text-align: center;
@@ -169,19 +180,6 @@ def main():
         </ul>
     </div>
     """, unsafe_allow_html=True)
-    
-    # 새로고침 버튼
-    if st.button("데이터 새로고침"):
-        # 스냅샷 저장
-        if df is not None:
-            with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
-                json.dump(df.to_dict('records'), f, ensure_ascii=False, indent=4)
-        
-        # 데이터 수집 스크립트 실행
-        os.system('python 국회의원실정보수집.py')
-        
-        # 페이지 새로고침
-        st.experimental_rerun()
 
     # 저작권 정보
     st.markdown("""
