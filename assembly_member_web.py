@@ -83,7 +83,7 @@ def load_data():
         df = pd.DataFrame([
             {
                 '이름': member['국회의원']['이름'],
-                '정당': member['국회의원'].get('정당', '정보 없음'),
+                '정당': member['국회의원']['정당'],  # 정당 정보 직접 사용
                 '당선횟수': member['국회의원']['당선횟수'],
                 '선거구': member['국회의원']['선거구'],
                 '소속위원회': member['국회의원']['소속위원회'],
@@ -129,7 +129,7 @@ def highlight_changes(df, snapshot_data):
     snapshot_df = pd.DataFrame([
         {
             '이름': member['국회의원']['이름'],
-            '정당': member['국회의원'].get('정당', '정보 없음'),
+            '정당': member['국회의원']['정당'],
             '당선횟수': member['국회의원']['당선횟수'],
             '선거구': member['국회의원']['선거구'],
             '소속위원회': member['국회의원']['소속위원회'],
