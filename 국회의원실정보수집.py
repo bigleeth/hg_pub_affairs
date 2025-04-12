@@ -74,7 +74,11 @@ def extract_member_data(soup, name):
         
         # 정당 정보 추출
         party_element = soup.find('div', class_='member_assem_dang')
-        party = party_element.text.strip() if party_element else "정보 없음"
+        if party_element:
+            # 정당 정보에서 불필요한 공백 제거
+            party = ' '.join(party_element.text.strip().split())
+        else:
+            party = "정보 없음"
         
         # 당선횟수 정보 추출
         election_count_element = soup.find('dt', text='당선횟수')
