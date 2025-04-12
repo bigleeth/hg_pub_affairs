@@ -156,9 +156,9 @@ def highlight_changes(df, snapshot_data):
             '당선횟수': member['국회의원']['당선횟수'],
             '선거구': member['국회의원']['선거구'],
             '소속위원회': member['국회의원']['소속위원회'],
-            '보좌관': ','.join(member['보좌관']),
-            '선임비서관': ','.join(member['선임비서관']),
-            '비서관': ','.join(member['비서관']),
+            '보좌관': member['보좌관'],  # 리스트 형태로 저장
+            '선임비서관': member['선임비서관'],  # 리스트 형태로 저장
+            '비서관': member['비서관'],  # 리스트 형태로 저장
             'URL': member['메타데이터']['url']
         }
         for member in snapshot_data
@@ -175,16 +175,20 @@ def highlight_changes(df, snapshot_data):
             # 각 열 비교
             for col in ['이름', '당선횟수', '선거구', '소속위원회', '보좌관', '선임비서관', '비서관']:
                 current_value = str(row[col])
-                snapshot_value = str(snapshot_row[col])
+                snapshot_value = snapshot_row[col]
 
                 if col == '당선횟수':
                     # 당선횟수는 처음 두 글자만 비교
                     if current_value[:2] != snapshot_value[:2]:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
                 elif col in ['보좌관', '선임비서관', '비서관']:
-                    # 보좌관, 선임비서관, 비서관은 이름 집합으로 비교
-                    current_set = set([name.strip() for name in str(current_value).split(',') if name.strip()])
-                    snapshot_set = set([name.strip() for name in str(snapshot_value).split(',') if name.strip()])
+                    # current_value는 쉼표로 구분된 문자열, snapshot_value는 리스트
+                    current_list = [name.strip() for name in str(current_value).split(',') if name.strip()]
+                    snapshot_list = [name.strip() for name in snapshot_value if isinstance(name, str) and name.strip()]
+                    
+                    current_set = set(current_list)
+                    snapshot_set = set(snapshot_list)
+
                     if current_set != snapshot_set:
                         df.at[idx, '변경사항'] += f'{col} 변경, '
                 else:
@@ -292,4 +296,4 @@ def main():
     """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
-    main() 
+    main()
