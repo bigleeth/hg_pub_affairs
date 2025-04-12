@@ -111,21 +111,29 @@ def load_data():
 @st.cache_data
 def load_snapshot():
     try:
-        # 현재 데이터 로드
-        with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
-            current_data = json.load(f)
-            
-        # 현재 데이터를 스냅샷으로 저장
-        with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
-            json.dump(current_data, f, ensure_ascii=False, indent=4)
-            
-        # 스냅샷 파일의 생성 시간 가져오기
-        snapshot_time = datetime.now().strftime("%Y년 %m월 %d일")
-        st.success("현재 데이터가 스냅샷으로 설정되었습니다.")
-        return current_data, snapshot_time
+        if os.path.exists('assembly_member_snapshot.json'):
+            with open('assembly_member_snapshot.json', 'r', encoding='utf-8') as f:
+                snapshot_data = json.load(f)
+                # 스냅샷 파일의 생성 시간 가져오기
+                snapshot_time = datetime.fromtimestamp(os.path.getmtime('assembly_member_snapshot.json')).strftime("%Y년 %m월 %d일")
+                return snapshot_data, snapshot_time
+        else:
+            st.warning("스냅샷 파일이 존재하지 않습니다.")
+            return None, None
     except Exception as e:
         st.error(f"스냅샷 로드 중 오류 발생: {str(e)}")
         return None, None
+
+# 스냅샷 리셋 함수
+def reset_snapshot():
+    try:
+        with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
+            current_data = json.load(f)
+        with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
+            json.dump(current_data, f, ensure_ascii=False, indent=4)
+        st.success("스냅샷이 성공적으로 업데이트되었습니다.")
+    except Exception as e:
+        st.error(f"스냅샷 업데이트 중 오류 발생: {str(e)}")
 
 # 데이터 비교 및 하이라이트 함수
 def highlight_changes(df, snapshot_data):
@@ -241,6 +249,17 @@ def main():
             "수집일시": st.column_config.DatetimeColumn("수집일시")
         }
     )
+    
+    # 스냅샷 리셋 버튼
+    st.sidebar.markdown("---")
+    st.sidebar.header("스냅샷 관리")
+    password = st.sidebar.text_input("비밀번호를 입력하세요", type="password")
+    if st.sidebar.button("스냅샷 리셋"):
+        if password == "0204":
+            reset_snapshot()
+            st.experimental_rerun()
+        else:
+            st.sidebar.error("잘못된 비밀번호입니다.")
     
     # 안내 메시지
     st.markdown(f"""
