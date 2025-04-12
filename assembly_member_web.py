@@ -82,21 +82,31 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 데이터 로드 함수
-@st.cache_data
+@st.cache_data(ttl=86400)  # 24시간(86400초)마다 캐시 갱신
 def load_data():
     try:
-        with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        # GitHub에서 최신 데이터 가져오기
+        response = requests.get('https://raw.githubusercontent.com/your-repo/assembly_member_data.json')
+        if response.status_code == 200:
+            data = response.json()
+            
+            # 로컬 파일에 저장
+            with open('assembly_member_data.json', 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+        else:
+            # GitHub에서 가져오기 실패 시 로컬 파일 사용
+            with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
             
         # 데이터프레임으로 변환
         df = pd.DataFrame([
             {
                 '이름': member['국회의원']['이름'],
                 '정당': member['국회의원'].get('정당', '정보 없음'),
-                '당선횟수': member['국회의원']['당선횟수'][:2],  # 처음 두 글자만 표시
+                '당선횟수': member['국회의원']['당선횟수'][:2],
                 '선거구': member['국회의원']['선거구'],
                 '소속위원회': member['국회의원']['소속위원회'],
-                '보좌관': ','.join(member['보좌관']),  # 쉼표 뒤에 공백 없이 조인
+                '보좌관': ','.join(member['보좌관']),
                 '선임비서관': ','.join(member['선임비서관']),
                 '비서관': ','.join(member['비서관']),
                 'URL': member['메타데이터']['url'],
@@ -110,6 +120,30 @@ def load_data():
         st.error(f"데이터 로드 중 오류 발생: {str(e)}")
         return None
 
+# 스냅샷 리셋 함수
+def reset_snapshot(password):
+    if password == "0204":
+        try:
+            # 현재 데이터를 스냅샷으로 저장
+            with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
+                current_data = json.load(f)
+            
+            # 현재 시간을 메타데이터에 추가
+            current_time = datetime.now().strftime("%Y년 %m월 %d일 %H시 %M분")
+            for member in current_data:
+                member['메타데이터']['스냅샷_생성일시'] = current_time
+            
+            # 스냅샷 파일에 저장
+            with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
+                json.dump(current_data, f, ensure_ascii=False, indent=4)
+            
+            st.success("스냅샷이 성공적으로 업데이트되었습니다.")
+            st.rerun()
+        except Exception as e:
+            st.error(f"스냅샷 업데이트 중 오류 발생: {str(e)}")
+    else:
+        st.error("비밀번호가 올바르지 않습니다.")
+
 # 스냅샷 데이터 로드 함수
 @st.cache_data
 def load_snapshot():
@@ -118,7 +152,7 @@ def load_snapshot():
             with open('assembly_member_snapshot.json', 'r', encoding='utf-8') as f:
                 snapshot_data = json.load(f)
                 # 스냅샷 파일의 생성 시간 가져오기
-                snapshot_time = datetime.fromtimestamp(os.path.getmtime('assembly_member_snapshot.json')).strftime("%Y년 %m월 %d일")
+                snapshot_time = snapshot_data[0]['메타데이터'].get('스냅샷_생성일시', '시간 정보 없음')
                 return snapshot_data, snapshot_time
         else:
             st.warning("스냅샷 파일이 존재하지 않습니다.")
@@ -126,21 +160,6 @@ def load_snapshot():
     except Exception as e:
         st.error(f"스냅샷 로드 중 오류 발생: {str(e)}")
         return None, None
-
-# 스냅샷 리셋 함수
-def reset_snapshot(password):
-    if password == "0204":
-        try:
-            with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
-                current_data = json.load(f)
-            with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
-                json.dump(current_data, f, ensure_ascii=False, indent=4)
-            st.success("스냅샷이 성공적으로 업데이트되었습니다.")
-            st.rerun()
-        except Exception as e:
-            st.error(f"스냅샷 업데이트 중 오류 발생: {str(e)}")
-    else:
-        st.error("비밀번호가 올바르지 않습니다.")
 
 # 데이터 비교 및 하이라이트 함수
 def get_flat_string(value):
