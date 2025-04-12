@@ -199,12 +199,33 @@ def main():
     df = load_data()
     if df is None:
         return
-        
-    # 스냅샷 로드
+
+    # 스냅샷 데이터 로드
     snapshot_data, snapshot_time = load_snapshot()
     
-    # 데이터 비교 및 하이라이트
-    df = highlight_changes(df, snapshot_data)
+    # 사이드바에 스냅샷 정보 표시
+    with st.sidebar:
+        st.markdown("### 📸 스냅샷 정보")
+        if snapshot_time:
+            st.markdown(f"**스냅샷 생성일:** {snapshot_time}")
+            if st.button("스냅샷 리셋", key="reset_snapshot"):
+                reset_snapshot()
+                st.experimental_rerun()
+        else:
+            st.warning("스냅샷이 존재하지 않습니다.")
+            if st.button("스냅샷 생성", key="create_snapshot"):
+                reset_snapshot()
+                st.experimental_rerun()
+
+    # 데이터프레임 표시
+    if snapshot_data:
+        df = highlight_changes(df, snapshot_data)
+        st.markdown("### 📊 국회의원 정보 (변경된 항목이 노란색으로 표시됩니다)")
+    else:
+        st.markdown("### 📊 국회의원 정보")
+    
+    # 데이터프레임 높이 설정
+    st.dataframe(df, height=500)
     
     # 필터링 옵션
     st.sidebar.header("필터")
@@ -220,40 +241,6 @@ def main():
     # 선거구 필터
     districts = ['전체'] + sorted(df['선거구'].unique().tolist())
     selected_district = st.sidebar.selectbox('선거구', districts)
-    
-    # 스냅샷 데이터 표시 버튼
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        if st.button("📊 스냅샷 데이터 보기", use_container_width=True):
-            if snapshot_data:
-                # 스냅샷 데이터를 데이터프레임으로 변환
-                snapshot_df = pd.DataFrame([
-                    {
-                        '이름': member['국회의원']['이름'],
-                        '정당': member['국회의원'].get('정당', ''),
-                        '당선횟수': member['국회의원'].get('당선횟수', '')[:2],  # 처음 두 글자만 표시
-                        '선거구': member['국회의원'].get('선거구', ''),
-                        '소속위원회': member['국회의원'].get('소속위원회', ''),
-                        '보좌관': ','.join(member.get('보좌관', [])),
-                        '선임비서관': ','.join(member.get('선임비서관', [])),
-                        '비서관': ','.join(member.get('비서관', [])),
-                        'URL': member['메타데이터']['url']
-                    }
-                    for member in snapshot_data
-                ])
-                
-                st.write(f"### 스냅샷 데이터 (기준일: {snapshot_time})")
-                st.dataframe(
-                    snapshot_df,
-                    use_container_width=True,
-                    hide_index=True,
-                    height=500,
-                    column_config={
-                        "URL": st.column_config.LinkColumn("URL")
-                    }
-                )
-            else:
-                st.warning("스냅샷 데이터가 없습니다.")
     
     # 필터링 적용
     filtered_df = df.copy()  # 원본 데이터프레임 복사
@@ -287,32 +274,6 @@ def main():
         </ul>
     </div>
     """, unsafe_allow_html=True)
-
-    # 스냅샷 관리 버튼 (작고 눈에 잘 띄지 않게)
-    st.markdown("""
-    <style>
-    .small-button {
-        font-size: 0.8em;
-        padding: 0.2em 0.5em;
-        background-color: #f0f0f0;
-        color: #666;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
-    with col2:
-        password = st.text_input("", type="password", key="snapshot_password", label_visibility="collapsed")
-        if st.button("스냅샷 리셋", key="snapshot_reset"):
-            if password == "0204":
-                reset_snapshot()
-                st.rerun()
-            else:
-                st.error("잘못된 비밀번호입니다.")
 
     # 저작권 정보
     st.markdown("""
