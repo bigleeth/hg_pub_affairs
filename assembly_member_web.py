@@ -151,21 +151,40 @@ def highlight_changes(df, snapshot_data):
     
     # 변경된 셀 체크
     for col in ['이름', '당선횟수', '선거구', '소속위원회', '보좌관', '선임비서관', '비서관']:
-        df[col] = df.apply(
-            lambda row: row[col] if row['URL'] not in snapshot_df['URL'].values 
-            or snapshot_df[snapshot_df['URL'] == row['URL']][col].iloc[0] == row[col]
-            else row[col],
-            axis=1
-        )
+        if col == '당선횟수':
+            # 당선횟수는 처음 두 글자만 비교
+            df[col] = df.apply(
+                lambda row: row[col] if row['URL'] not in snapshot_df['URL'].values 
+                or snapshot_df[snapshot_df['URL'] == row['URL']][col].iloc[0][:2] == row[col][:2]
+                else row[col],
+                axis=1
+            )
+        else:
+            df[col] = df.apply(
+                lambda row: row[col] if row['URL'] not in snapshot_df['URL'].values 
+                or snapshot_df[snapshot_df['URL'] == row['URL']][col].iloc[0] == row[col]
+                else row[col],
+                axis=1
+            )
         
         # 변경사항이 있는 경우 변경사항 열에 추가
-        df['변경사항'] = df.apply(
-            lambda row: row['변경사항'] + f'{col} 변경, ' 
-            if row['URL'] in snapshot_df['URL'].values 
-            and snapshot_df[snapshot_df['URL'] == row['URL']][col].iloc[0] != row[col]
-            else row['변경사항'],
-            axis=1
-        )
+        if col == '당선횟수':
+            # 당선횟수는 처음 두 글자만 비교
+            df['변경사항'] = df.apply(
+                lambda row: row['변경사항'] + f'{col} 변경, ' 
+                if row['URL'] in snapshot_df['URL'].values 
+                and snapshot_df[snapshot_df['URL'] == row['URL']][col].iloc[0][:2] != row[col][:2]
+                else row['변경사항'],
+                axis=1
+            )
+        else:
+            df['변경사항'] = df.apply(
+                lambda row: row['변경사항'] + f'{col} 변경, ' 
+                if row['URL'] in snapshot_df['URL'].values 
+                and snapshot_df[snapshot_df['URL'] == row['URL']][col].iloc[0] != row[col]
+                else row['변경사항'],
+                axis=1
+            )
     
     # 변경사항 열의 마지막 쉼표 제거
     df['변경사항'] = df['변경사항'].str.rstrip(', ')
