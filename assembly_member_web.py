@@ -21,10 +21,9 @@ st.markdown("""
         background-color: yellow;
     }
     .info-box {
-        background-color: #f0f0f0;
         padding: 15px;
-        border-radius: 5px;
-        margin-bottom: 20px;
+        margin-top: 20px;
+        color: #333;
     }
     .copyright {
         text-align: center;
@@ -39,18 +38,6 @@ st.markdown("""
 
 # 제목
 st.title("국회의원실 정보 대시보드 (수은 대외팀)")
-
-# 안내 메시지
-st.markdown("""
-<div class="info-box">
-    <h3>📌 안내사항</h3>
-    <ul>
-        <li>노란색으로 표시된 셀은 2025년 4월 기준 대비 변동된 정보입니다.</li>
-        <li>변동사항: 소속위원회 변경, 보좌진 변경 등</li>
-        <li>데이터는 매일 자동으로 업데이트됩니다.</li>
-    </ul>
-</div>
-""", unsafe_allow_html=True)
 
 # 데이터 로드 함수
 @st.cache_data
@@ -170,6 +157,18 @@ def main():
             "수집일시": st.column_config.DatetimeColumn("수집일시")
         }
     )
+    
+    # 안내 메시지
+    st.markdown("""
+    <div class="info-box">
+        <h3>📌 안내사항</h3>
+        <ul>
+            <li>노란색으로 표시된 셀은 2025년 4월 기준 대비 변동된 정보입니다.</li>
+            <li>변동사항: 소속위원회 변경, 보좌진 변경 등</li>
+            <li>데이터는 매일 자동으로 업데이트됩니다.</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
     
     # 새로고침 버튼
     if st.button("데이터 새로고침"):
