@@ -65,6 +65,38 @@ members = [
     ("박수민", "PARKSOOMIN")
 ]
 
+# 정당 정보 매핑
+party_mapping = {
+    "정태호": "더불어민주당",
+    "김영진": "더불어민주당",
+    "김영환": "더불어민주당",
+    "김태년": "더불어민주당",
+    "박홍근": "더불어민주당",
+    "신영대": "더불어민주당",
+    "안도걸": "더불어민주당",
+    "오기형": "더불어민주당",
+    "윤호중": "더불어민주당",
+    "임광현": "더불어민주당",
+    "정성호": "더불어민주당",
+    "정일영": "더불어민주당",
+    "진성준": "더불어민주당",
+    "황명선": "더불어민주당",
+    "최기상": "더불어민주당",
+    "이언주": "더불어민주당",
+    "유동수": "더불어민주당",
+    "송언석": "국민의힘",
+    "박수영": "국민의힘",
+    "구자근": "국민의힘",
+    "박대출": "국민의힘",
+    "박성훈": "국민의힘",
+    "박수민": "국민의힘",
+    "이인선": "국민의힘",
+    "이종욱": "국민의힘",
+    "최은석": "국민의힘",
+    "차규근": "조국혁신당",
+    "천하람": "개혁신당"
+}
+
 # 데이터 추출 함수
 def extract_member_data(soup, name):
     try:
@@ -72,23 +104,8 @@ def extract_member_data(soup, name):
         name_element = soup.find('span', class_='sr-only')
         name = name_element.text.strip() if name_element else "정보 없음"
         
-        # 정당 정보 추출
-        party_element = soup.find('div', class_='member_assem_dang')
-        if not party_element:
-            # 다른 위치에서 정당 정보 찾기
-            party_element = soup.find('div', class_='member_assem_dang_info')
-        if not party_element:
-            # dt 태그에서 정당 정보 찾기
-            party_element = soup.find('dt', text='소속정당')
-            if party_element:
-                party_element = party_element.find_next('dd')
-        
-        if party_element:
-            # 정당 정보에서 불필요한 공백 제거
-            party = ' '.join(party_element.text.strip().split())
-        else:
-            party = "정보 없음"
-            print(f"정당 정보를 찾을 수 없음: {name}")
+        # 정당 정보 설정
+        party = party_mapping.get(name, "정보 없음")
         
         # 당선횟수 정보 추출
         election_count_element = soup.find('dt', text='당선횟수')
