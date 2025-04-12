@@ -272,7 +272,8 @@ def main():
                     '보좌관': ','.join(member.get('보좌관', [])),
                     '선임비서관': ','.join(member.get('선임비서관', [])),
                     '비서관': ','.join(member.get('비서관', [])),
-                    'URL': member['메타데이터']['url']
+                    'URL': member['메타데이터']['url'],
+                    '스냅샷 수집일시': member['메타데이터']['수집일시']
                 }
                 for member in snapshot_data
             ])
@@ -282,7 +283,8 @@ def main():
                 hide_index=True,
                 height=400,
                 column_config={
-                    "URL": st.column_config.LinkColumn("URL")
+                    "URL": st.column_config.LinkColumn("URL"),
+                    "스냅샷 수집일시": st.column_config.DatetimeColumn("스냅샷 수집일시")
                 }
             )
         else:
