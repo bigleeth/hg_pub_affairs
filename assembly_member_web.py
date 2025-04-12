@@ -144,60 +144,58 @@ def reset_snapshot():
         st.error(f"스냅샷 업데이트 중 오류 발생: {str(e)}")
 
 # 데이터 비교 및 하이라이트 함수
+def get_flat_string(value):
+    if isinstance(value, list):
+        return ','.join([str(x).strip() for x in value])
+    return str(value).strip()
+
+def compare_members(current, snapshot):
+    diffs = []
+    for key in ['이름', '정당', '당선횟수', '선거구', '소속위원회', '보좌관', '선임비서관', '비서관']:
+        cur_val = get_flat_string(current.get(key, ''))
+        snap_val = get_flat_string(snapshot.get(key, ''))
+        if cur_val != snap_val:
+            diffs.append(f"{key} 변경")
+    return ', '.join(diffs)
+
 def highlight_changes(df, snapshot_data):
     if snapshot_data is None:
         return df
         
-    # 스냅샷 데이터프레임 생성
-    snapshot_df = pd.DataFrame([
-        {
+    # 스냅샷 데이터를 빠른 조회를 위한 딕셔너리로 변환
+    snapshot_dict = {
+        member['메타데이터']['url']: {
             '이름': member['국회의원']['이름'],
-            '정당': member['국회의원'].get('정당', '정보 없음'),
-            '당선횟수': member['국회의원']['당선횟수'],
-            '선거구': member['국회의원']['선거구'],
-            '소속위원회': member['국회의원']['소속위원회'],
-            '보좌관': member['보좌관'],
-            '선임비서관': member['선임비서관'],
-            '비서관': member['비서관'],
-            'URL': member['메타데이터']['url']
+            '정당': member['국회의원'].get('정당', ''),
+            '당선횟수': member['국회의원'].get('당선횟수', ''),
+            '선거구': member['국회의원'].get('선거구', ''),
+            '소속위원회': member['국회의원'].get('소속위원회', ''),
+            '보좌관': member.get('보좌관', []),
+            '선임비서관': member.get('선임비서관', []),
+            '비서관': member.get('비서관', [])
         }
         for member in snapshot_data
-    ])
+    }
     
     # 변경사항을 저장할 새로운 열 추가
     df['변경사항'] = ''
     
-    # 변경된 셀 체크
+    # 각 행에 대해 변경사항 비교
     for idx, row in df.iterrows():
-        if row['URL'] in snapshot_df['URL'].values:
-            snapshot_row = snapshot_df[snapshot_df['URL'] == row['URL']].iloc[0]
-            
-            # 각 열 비교
-            for col in ['이름', '당선횟수', '선거구', '소속위원회', '보좌관', '선임비서관', '비서관']:
-                current_value = str(row[col])
-                snapshot_value = snapshot_row[col]
-
-                if col == '당선횟수':
-                    # 당선횟수는 처음 두 글자만 비교
-                    if current_value[:2] != snapshot_value[:2]:
-                        df.at[idx, '변경사항'] += f'{col} 변경, '
-                elif col in ['보좌관', '선임비서관', '비서관']:
-                    # 현재 값과 스냅샷 값을 정규화: 분할 → 공백 제거 → 정렬 → 재결합
-                    current_list = [x.strip() for x in str(current_value).split(',') if x.strip()]
-                    snapshot_list = [x.strip() for x in snapshot_value if isinstance(x, str) and x.strip()]
-                    
-                    current_str = ','.join(sorted(current_list))
-                    snapshot_str = ','.join(sorted(snapshot_list))
-                    
-                    if current_str != snapshot_str:
-                        df.at[idx, '변경사항'] += f'{col} 변경, '
-                else:
-                    # 다른 열들은 문자열로 비교
-                    if current_value != snapshot_value:
-                        df.at[idx, '변경사항'] += f'{col} 변경, '
-    
-    # 변경사항 열의 마지막 쉼표 제거
-    df['변경사항'] = df['변경사항'].str.rstrip(', ')
+        url = row['URL']
+        if url in snapshot_dict:
+            current_flat = {
+                '이름': row['이름'],
+                '정당': row['정당'],
+                '당선횟수': row['당선횟수'],
+                '선거구': row['선거구'],
+                '소속위원회': row['소속위원회'],
+                '보좌관': row['보좌관'],
+                '선임비서관': row['선임비서관'],
+                '비서관': row['비서관']
+            }
+            snapshot_flat = snapshot_dict[url]
+            df.at[idx, '변경사항'] = compare_members(current_flat, snapshot_flat)
     
     return df
 
