@@ -77,17 +77,8 @@ st.markdown("""
 def load_data():
     try:
         with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
-            content = f.read()
+            data = json.load(f)
             
-        # Try to extract the first complete JSON list
-        first_bracket = content.find('[')
-        last_bracket = content.rfind(']')
-        if first_bracket == -1 or last_bracket == -1:
-            raise ValueError("No valid JSON array found in the file")
-            
-        cleaned_json = content[first_bracket:last_bracket + 1]
-        current_data = json.loads(cleaned_json)
-        
         # 데이터프레임으로 변환
         df = pd.DataFrame([
             {
@@ -102,13 +93,13 @@ def load_data():
                 'URL': member['메타데이터']['url'],
                 '수집일시': member['메타데이터']['수집일시']
             }
-            for member in current_data
+            for member in data
         ])
         
         # 스냅샷 파일이 없으면 현재 데이터를 스냅샷으로 저장
         if not os.path.exists('assembly_member_snapshot.json'):
             with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
-                json.dump(current_data, f, ensure_ascii=False, indent=4)
+                json.dump(data, f, ensure_ascii=False, indent=4)
             st.info("현재 데이터가 스냅샷으로 저장되었습니다. 이후 변경사항은 이 시점을 기준으로 비교됩니다.")
         
         return df
