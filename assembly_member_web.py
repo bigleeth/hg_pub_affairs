@@ -167,11 +167,16 @@ def load_snapshot():
         with open('assembly_member_snapshot.json', 'r', encoding='utf-8') as f:
             snapshot_data = json.load(f)
             
-        # 정당 정보가 없는 경우 추가
+        # 특정 의원들의 정당 정보 강제 업데이트
         for member in snapshot_data:
-            if member['국회의원'].get('정당') == '정보 없음':
-                member['국회의원']['정당'] = party_mapping.get(member['국회의원']['이름'], '정보 없음')
+            name = member['국회의원']['이름']
+            if name in ['김상훈', '윤한홍', '강훈식', '신동욱']:
+                member['국회의원']['정당'] = party_mapping.get(name, '정보 없음')
                 
+        # 스냅샷 파일 업데이트
+        with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
+            json.dump(snapshot_data, f, ensure_ascii=False, indent=4)
+            
         return snapshot_data
     except Exception as e:
         st.error(f"스냅샷 로드 중 오류 발생: {str(e)}")
