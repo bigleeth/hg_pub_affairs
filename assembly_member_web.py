@@ -152,8 +152,14 @@ def load_snapshot():
             with open('assembly_member_snapshot.json', 'r', encoding='utf-8') as f:
                 snapshot_data = json.load(f)
                 # 스냅샷 파일의 생성 시간 가져오기
-                snapshot_time = snapshot_data[0]['메타데이터'].get('스냅샷_생성일시', '시간 정보 없음')
-                return snapshot_data, snapshot_time
+                snapshot_time = snapshot_data[0]['메타데이터'].get('수집일시', '시간 정보 없음')
+                # 날짜 형식 변환
+                try:
+                    date_obj = datetime.strptime(snapshot_time, "%a, %d %b %Y %H:%M:%S GMT")
+                    formatted_date = date_obj.strftime("%Y년 %m월 %d일")
+                except:
+                    formatted_date = snapshot_time
+                return snapshot_data, formatted_date
         else:
             st.warning("스냅샷 파일이 존재하지 않습니다.")
             return None, None
@@ -225,7 +231,7 @@ def main():
         return
 
     # 스냅샷 데이터 로드
-    snapshot_data, snapshot_time = load_snapshot()
+    snapshot_data, snapshot_date = load_snapshot()
     
     # 데이터프레임 표시
     if snapshot_data:
@@ -271,7 +277,7 @@ def main():
     )
     
     # 스냅샷 데이터 보기
-    with st.expander("📸 스냅샷 원본 보기 (assembly_member_snapshot.json)", expanded=False):
+    with st.expander("📸 스냅샷 원본 보기", expanded=False):
         if snapshot_data:
             snapshot_df = pd.DataFrame([
                 {
@@ -307,7 +313,7 @@ def main():
         <h3>📌 안내사항</h3>
         <ul>
             <li>기재위 소속 및 기타 수은 업무 관련 의원실 정보가 나타나 있습니다.</li>
-            <li>변경사항은 스냅샷 기준일 대비 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
+            <li>변경사항은 스냅샷 기준일({snapshot_date}) 대비 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
             <li>데이터는 매일 자동으로 업데이트됩니다.</li>
         </ul>
     </div>
