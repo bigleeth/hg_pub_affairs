@@ -14,8 +14,19 @@ st.set_page_config(
 # 스타일 설정
 st.markdown("""
     <style>
+    /* 기본 폰트 크기 설정 */
+    h1 {
+        font-size: 1.5rem !important;
+    }
+    h2 {
+        font-size: 1.2rem !important;
+    }
+    h3 {
+        font-size: 1.1rem !important;
+    }
     .stDataFrame {
         width: 100%;
+        font-size: 0.9rem;
     }
     .highlight {
         background-color: yellow;
@@ -24,10 +35,12 @@ st.markdown("""
         padding: 15px;
         margin-top: 20px;
         color: #666;
+        font-size: 0.9rem;
     }
     .info-box h3 {
         color: #666;
         margin-bottom: 10px;
+        font-size: 1rem;
     }
     .info-box ul {
         margin: 0;
@@ -39,16 +52,25 @@ st.markdown("""
     .copyright {
         text-align: center;
         color: #666;
-        font-size: 0.8em;
+        font-size: 0.8rem;
         margin-top: 20px;
         padding-top: 20px;
         border-top: 1px solid #eee;
+    }
+    /* 사이드바 폰트 크기 조정 */
+    .sidebar .sidebar-content {
+        font-size: 0.9rem;
+    }
+    .sidebar .sidebar-content .stSelectbox {
+        font-size: 0.9rem;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # 제목
-st.title("국회의원실 정보 대시보드 (수은 대외팀)")
+st.markdown("""
+    <h1 style="margin-bottom: 1rem;">국회의원실 정보 대시보드 (수은 대외팀)</h1>
+""", unsafe_allow_html=True)
 
 # 데이터 로드 함수
 @st.cache_data
@@ -61,6 +83,7 @@ def load_data():
         df = pd.DataFrame([
             {
                 '이름': member['국회의원']['이름'],
+                '정당': member['국회의원']['정당'],
                 '당선횟수': member['국회의원']['당선횟수'],
                 '선거구': member['국회의원']['선거구'],
                 '소속위원회': member['국회의원']['소속위원회'],
@@ -144,6 +167,10 @@ def main():
     # 필터링 옵션
     st.sidebar.header("필터")
     
+    # 정당 필터
+    parties = ['전체'] + sorted(df['정당'].unique().tolist())
+    selected_party = st.sidebar.selectbox('정당', parties)
+    
     # 소속위원회 필터
     committees = ['전체'] + sorted(df['소속위원회'].unique().tolist())
     selected_committee = st.sidebar.selectbox('소속위원회', committees)
@@ -153,6 +180,8 @@ def main():
     selected_district = st.sidebar.selectbox('선거구', districts)
     
     # 필터링 적용
+    if selected_party != '전체':
+        df = df[df['정당'] == selected_party]
     if selected_committee != '전체':
         df = df[df['소속위원회'] == selected_committee]
     if selected_district != '전체':

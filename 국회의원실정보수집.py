@@ -72,6 +72,10 @@ def extract_member_data(soup, name):
         name_element = soup.find('span', class_='sr-only')
         name = name_element.text.strip() if name_element else "정보 없음"
         
+        # 정당 정보 추출
+        party_element = soup.find('div', class_='member_assem_dang')
+        party = party_element.text.strip() if party_element else "정보 없음"
+        
         # 당선횟수 정보 추출
         election_count_element = soup.find('dt', text='당선횟수')
         if election_count_element:
@@ -112,6 +116,7 @@ def extract_member_data(soup, name):
         return {
             "국회의원": {
                 "이름": name,
+                "정당": party,
                 "당선횟수": election_count,
                 "선거구": district,
                 "소속위원회": committee
@@ -130,6 +135,7 @@ def extract_member_data(soup, name):
         return {
             "국회의원": {
                 "이름": "정보 없음",
+                "정당": "정보 없음",
                 "당선횟수": "정보 없음",
                 "선거구": "정보 없음",
                 "소속위원회": "정보 없음"
