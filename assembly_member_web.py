@@ -200,16 +200,17 @@ def main():
     selected_district = st.sidebar.selectbox('선거구', districts)
     
     # 필터링 적용
+    filtered_df = df.copy()  # 원본 데이터프레임 복사
     if selected_party != '전체':
-        df = df[df['정당'] == selected_party]
+        filtered_df = filtered_df[filtered_df['정당'] == selected_party]
     if selected_committee != '전체':
-        df = df[df['소속위원회'] == selected_committee]
+        filtered_df = filtered_df[filtered_df['소속위원회'] == selected_committee]
     if selected_district != '전체':
-        df = df[df['선거구'] == selected_district]
+        filtered_df = filtered_df[filtered_df['선거구'] == selected_district]
     
     # 데이터 표시
     st.dataframe(
-        df,
+        filtered_df,
         use_container_width=True,
         hide_index=True,
         height=500,
