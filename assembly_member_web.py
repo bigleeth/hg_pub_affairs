@@ -111,20 +111,22 @@ def load_data():
 @st.cache_data
 def load_snapshot():
     try:
-        if os.path.exists('assembly_member_snapshot.json'):
-            with open('assembly_member_snapshot.json', 'r', encoding='utf-8') as f:
-                content = f.read()
-                
-            # Try to extract the first complete JSON list
-            first_bracket = content.find('[')
-            last_bracket = content.rfind(']')
-            if first_bracket == -1 or last_bracket == -1:
-                raise ValueError("No valid JSON array found in the snapshot file")
-                
-            cleaned_json = content[first_bracket:last_bracket + 1]
-            snapshot_data = json.loads(cleaned_json)
-            return snapshot_data
-        return None
+        # 현재 데이터 로드
+        with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
+            current_data = json.load(f)
+            
+        # 스냅샷 파일이 없거나 업데이트가 필요한 경우
+        if not os.path.exists('assembly_member_snapshot.json'):
+            with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
+                json.dump(current_data, f, ensure_ascii=False, indent=4)
+            st.info("현재 데이터가 스냅샷으로 저장되었습니다. 이후 변경사항은 이 시점을 기준으로 비교됩니다.")
+            return current_data
+            
+        # 스냅샷 파일 로드
+        with open('assembly_member_snapshot.json', 'r', encoding='utf-8') as f:
+            snapshot_data = json.load(f)
+            
+        return snapshot_data
     except Exception as e:
         st.error(f"스냅샷 로드 중 오류 발생: {str(e)}")
         return None
@@ -218,7 +220,7 @@ def main():
         filtered_df,
         use_container_width=True,
         hide_index=True,
-        height=1000,
+        height=700,
         column_config={
             "URL": st.column_config.LinkColumn("URL"),
             "수집일시": st.column_config.DatetimeColumn("수집일시")
