@@ -75,13 +75,26 @@ def collect_bill_info(bill_name):
     return bills
 
 # 예시 사용
-bill_name = "한국수출입은행법 일부개정법률안"
-bills = collect_bill_info(bill_name)
+bill_names = [
+    "한국수출입은행법 일부개정법률안",
+    "경제안보를 위한 공급망 안정화 지원 기본법 일부개정법률안",
+    "첨단조선업의 경쟁력 강화 및 지원에 관한 특별법안",
+    "공공기관의 운영에 관한 법률 일부개정법률안",
+    "한국산업은행법 일부개정법률안",
+    "2025년도에 발행하는 첨단전략산업기금채권에 대한 국가보증동의안",
+    "중소기업은행법 일부개정법률안",
+    "정부조직법 일부개정법률안"
+]
+
+all_bills = []
+for bill_name in bill_names:
+    bills = collect_bill_info(bill_name)
+    all_bills.extend(bills)
 
 # 결과를 JSON 파일로 저장
 with open('의안정보검색결과.json', 'w', encoding='utf-8') as f:
-    json.dump(bills, f, ensure_ascii=False, indent=4)
+    json.dump(all_bills, f, ensure_ascii=False, indent=4)
 
 # 결과를 DataFrame으로 변환하여 출력
-df = pd.DataFrame(bills)
+df = pd.DataFrame(all_bills)
 print(df)

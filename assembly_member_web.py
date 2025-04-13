@@ -308,9 +308,9 @@ def main():
     # 데이터프레임 표시
     if snapshot_data:
         df = highlight_changes(df, snapshot_data)
-        st.markdown("### 📊 국회의원 정보 (변경 항목 표시)")
+        st.markdown("### 🏛️ 국회의원 정보 (변경 항목 표시)")
     else:
-        st.markdown("### 📊 국회의원 정보")
+        st.markdown("### 🏛️ 국회의원 정보")
     
     # 필터링 옵션
     st.sidebar.header("필터")
