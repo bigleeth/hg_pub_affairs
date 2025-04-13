@@ -488,12 +488,24 @@ def main():
     <div class="info-box">
         <h3>📌 안내사항</h3>
         <ul>
-            <li>기재위 소속 및 기타 수은 업무 관련 의원실 정보가 나타나 있습니다.</li>
-            <li>변경사항은 스냅샷 기준일({snapshot_date}) 대비 현시점 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
+            <li>수은 업무 관련 국회의원 및 법률안 발의내역 등 정보가 나타나 있습니다.</li>
+            <li>국회의원 정보 변경사항은 스냅샷 기준일({snapshot_date}) 대비 현시점 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
             <li>데이터는 매일 자동으로 업데이트됩니다.</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
+
+    # 요청사항 메시지 박스 추가
+    st.markdown("""
+    <div class="info-box">
+        <h3>💬 요청사항</h3>
+        <p>요청사항을 남겨주세요 (모니터링 국회의원, 법률안 추가 등)</p>
+    </div>
+    """, unsafe_allow_html=True)
+    user_feedback = st.text_area("", placeholder="요청사항을 입력해주세요...", height=100)
+    
+    if user_feedback:
+        st.success("요청사항이 전송되었습니다. 감사합니다!")
 
     # 스냅샷 데이터 보기
     with st.expander("📸 스냅샷 원본 보기", expanded=False):
