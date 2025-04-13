@@ -447,10 +447,8 @@ def main():
         
         subcommittee_df = pd.DataFrame(subcommittee_rows)
         
-        # 소위원회 필터를 왼쪽에 배치
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            selected_subcommittee = st.selectbox('소위원회 필터', ['전체'] + sorted(subcommittee_df['소위원회'].unique().tolist()))
+        # 소위원회 필터를 왼쪽 사이드바로 이동
+        selected_subcommittee = st.sidebar.selectbox('소위원회 필터', ['전체'] + sorted(subcommittee_df['소위원회'].unique().tolist()))
         
         # 필터링 적용
         if selected_subcommittee != '전체':
