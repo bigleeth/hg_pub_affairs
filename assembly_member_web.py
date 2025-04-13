@@ -368,12 +368,23 @@ def main():
             for bill in bill_data
         ])
         
+        # 제안일자 기준으로 내림차순 정렬
+        bill_df['제안일자'] = pd.to_datetime(bill_df['제안일자'])
+        bill_df = bill_df.sort_values('제안일자', ascending=False)
+        
         st.dataframe(
             bill_df,
             use_container_width=True,
             hide_index=True,
             height=400
         )
+        
+        # 의안정보시스템 링크 추가
+        st.markdown("""
+        <div style="text-align: right; margin-top: 10px;">
+            <a href="https://likms.assembly.go.kr/bill/main.do" target="_blank">의안정보시스템 바로가기</a>
+        </div>
+        """, unsafe_allow_html=True)
     except Exception as e:
         st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
     
