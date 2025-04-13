@@ -432,10 +432,13 @@ def main():
         st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
     
     # 소위원회 정보 표시
-    st.markdown("### 🏛️ 소위원회 정보")
+    st.markdown("### 🪑 소위원회 정보")
     try:
         with open('소위원회정보.json', 'r', encoding='utf-8') as f:
             subcommittee_data = json.load(f)
+            
+        # 수집일시 표시
+        st.markdown(f"<div style='text-align: right; color: #666; font-size: 0.9rem;'>수집일시: {subcommittee_data['메타데이터']['수집일시']}</div>", unsafe_allow_html=True)
             
         # 소위원회 정보를 DataFrame으로 변환
         subcommittee_rows = []
@@ -448,7 +451,8 @@ def main():
         subcommittee_df = pd.DataFrame(subcommittee_rows)
         
         # 소위원회 필터를 왼쪽 사이드바로 이동
-        selected_subcommittee = st.sidebar.selectbox('소위원회 필터', ['전체'] + sorted(subcommittee_df['소위원회'].unique().tolist()))
+        st.sidebar.subheader("소위원회 필터")
+        selected_subcommittee = st.sidebar.selectbox('소위원회', ['전체'] + sorted(subcommittee_df['소위원회'].unique().tolist()))
         
         # 필터링 적용
         if selected_subcommittee != '전체':
