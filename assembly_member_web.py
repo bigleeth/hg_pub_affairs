@@ -419,7 +419,7 @@ def main():
             bill_df,
             use_container_width=True,
             hide_index=True,
-            height=400
+            height=200
         )
         
         # 의안정보시스템 링크 추가
