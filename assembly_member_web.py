@@ -315,6 +315,8 @@ def main():
     # 필터링 옵션
     st.sidebar.header("필터")
     
+    # 국회의원 정보 필터
+    st.sidebar.subheader("국회의원 정보 필터")
     # 정당 필터
     parties = ['전체'] + sorted(df['정당'].unique().tolist())
     selected_party = st.sidebar.selectbox('정당', parties)
@@ -326,6 +328,27 @@ def main():
     # 선거구 필터
     districts = ['전체'] + sorted(df['선거구'].unique().tolist())
     selected_district = st.sidebar.selectbox('선거구', districts)
+    
+    # 법률안 필터
+    st.sidebar.subheader("법률안 필터")
+    try:
+        with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
+            bill_data = json.load(f)
+            
+        # 법률안 이름 목록 추출
+        bill_names = sorted(list(set(bill['의안명']['text'] for bill in bill_data)))
+        selected_bill = st.sidebar.selectbox('법률안', ['전체'] + bill_names)
+        
+        # 제안자구분 필터
+        proposer_types = ['전체'] + sorted(list(set(bill['제안자구분'] for bill in bill_data)))
+        selected_proposer = st.sidebar.selectbox('제안자구분', proposer_types)
+        
+        # 심사진행상태 필터
+        status_types = ['전체'] + sorted(list(set(bill['심사진행상태'] for bill in bill_data)))
+        selected_status = st.sidebar.selectbox('심사진행상태', status_types)
+        
+    except Exception as e:
+        st.sidebar.warning("법률안 필터 데이터를 불러오는 중 오류가 발생했습니다.")
     
     # 필터링 적용
     filtered_df = df.copy()  # 원본 데이터프레임 복사
@@ -363,10 +386,19 @@ def main():
                 '제안일자': bill['제안일자'],
                 '의결일자': bill['의결일자'],
                 '의결결과': bill['의결결과'],
-                '심사진행상태': bill['심사진행상태']
+                '심사진행상태': bill['심사진행상태'],
+                '수집일시': bill.get('수집일시', '')
             }
             for bill in bill_data
         ])
+        
+        # 법률안 필터 적용
+        if selected_bill != '전체':
+            bill_df = bill_df[bill_df['의안명'] == selected_bill]
+        if selected_proposer != '전체':
+            bill_df = bill_df[bill_df['제안자구분'] == selected_proposer]
+        if selected_status != '전체':
+            bill_df = bill_df[bill_df['심사진행상태'] == selected_status]
         
         # 제안일자 기준으로 내림차순 정렬
         bill_df['제안일자'] = pd.to_datetime(bill_df['제안일자'])
