@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import pandas as pd
+from datetime import datetime
 
 def collect_bill_info(bill_name):
     headers = {
@@ -68,7 +69,8 @@ def collect_bill_info(bill_name):
                         'text': '주요내용 보기',
                         'link': f'javascript:ajaxShowListSummaryLayerPopup(\'{content_bill_id}\')' if content_bill_id else ''
                     },
-                    '심사진행상태': cols[7].text.strip()
+                    '심사진행상태': cols[7].text.strip(),
+                    '수집일시': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 }
                 bills.append(bill)
     
