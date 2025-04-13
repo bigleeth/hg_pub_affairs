@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
+import subprocess
 
 # 페이지 설정
 st.set_page_config(
@@ -499,13 +500,29 @@ def main():
     st.markdown("""
     <div class="info-box">
         <h3>💬 요청사항</h3>
-        <p>요청사항을 남겨주세요 (모니터링 국회의원, 법률안 추가 등)</p>
+        <ul>
+            <li>요청사항을 남겨주세요 (모니터링 국회의원, 법률안 추가 등)</li>
+        </ul>
     </div>
     """, unsafe_allow_html=True)
-    user_feedback = st.text_area("", placeholder="요청사항을 입력해주세요...", height=100)
+    user_feedback = st.text_area("", placeholder="요청사항을 입력해주세요...", height=30)
     
     if user_feedback:
-        st.success("요청사항이 전송되었습니다. 감사합니다!")
+        # 요청사항을 파일에 저장
+        feedback_file = 'user_feedback.txt'
+        with open(feedback_file, 'a', encoding='utf-8') as f:
+            f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {user_feedback}\n")
+        
+        # GitHub에 업로드
+        try:
+            subprocess.run(['git', 'add', feedback_file], check=True)
+            subprocess.run(['git', 'commit', '-m', f'Add user feedback: {user_feedback[:50]}...'], check=True)
+            subprocess.run(['git', 'push'], check=True)
+            st.success("요청사항이 저장되었습니다. 감사합니다!")
+        except subprocess.CalledProcessError as e:
+            st.error(f"GitHub 업로드 중 오류가 발생했습니다: {str(e)}")
+        except Exception as e:
+            st.error(f"오류가 발생했습니다: {str(e)}")
 
     # 스냅샷 데이터 보기
     with st.expander("📸 스냅샷 원본 보기", expanded=False):
