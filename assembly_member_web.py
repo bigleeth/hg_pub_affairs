@@ -412,7 +412,7 @@ def main():
             bill_df = bill_df[bill_df['심사진행상태'] == selected_status]
         
         # 제안일자 기준으로 내림차순 정렬
-        bill_df['제안일자'] = pd.to_datetime(bill_df['제안일자'])
+        bill_df['제안일자'] = pd.to_datetime(bill_df['제안일자']).dt.strftime('%Y-%m-%d')
         bill_df = bill_df.sort_values('제안일자', ascending=False)
         
         st.dataframe(
