@@ -446,6 +446,7 @@ def main():
             row = {'소위원회': committee_name}
             for party, members in parties.items():
                 row[party] = ', '.join(members)
+            row['수집일시'] = subcommittee_data['메타데이터']['수집일시']
             subcommittee_rows.append(row)
         
         subcommittee_df = pd.DataFrame(subcommittee_rows)
@@ -459,7 +460,7 @@ def main():
             subcommittee_df = subcommittee_df[subcommittee_df['소위원회'] == selected_subcommittee]
         
         # 열 순서 재정렬
-        column_order = ['소위원회', '더불어민주당', '국민의힘', '비교섭단체']
+        column_order = ['소위원회', '더불어민주당', '국민의힘', '비교섭단체', '수집일시']
         subcommittee_df = subcommittee_df.reindex(columns=column_order)
         
         st.dataframe(
@@ -468,6 +469,13 @@ def main():
             hide_index=True,
             height=200
         )
+        
+        # 기획재정위원회 링크 추가
+        st.markdown("""
+        <div style="text-align: right; margin-top: 10px;">
+            <a href="https://finance.na.go.kr/" target="_blank">기획재정위원회 바로가기</a>
+        </div>
+        """, unsafe_allow_html=True)
     except Exception as e:
         st.warning("소위원회 정보를 불러오는 중 오류가 발생했습니다.")
     
