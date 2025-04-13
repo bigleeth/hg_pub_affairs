@@ -335,8 +335,16 @@ def main():
         with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
             bill_data = json.load(f)
             
-        # 법률안 이름 목록 추출
-        bill_names = sorted(list(set(bill['의안명']['text'] for bill in bill_data)))
+        # 법률안 이름 목록 추출 (괄호 안의 개인 이름 제외)
+        bill_names = []
+        for bill in bill_data:
+            bill_name = bill['의안명']['text']
+            # 괄호 앞의 법률안 이름만 추출
+            if '(' in bill_name:
+                bill_name = bill_name.split('(')[0].strip()
+            if bill_name not in bill_names:
+                bill_names.append(bill_name)
+        bill_names = sorted(bill_names)
         selected_bill = st.sidebar.selectbox('법률안', ['전체'] + bill_names)
         
         # 제안자구분 필터
@@ -394,7 +402,10 @@ def main():
         
         # 법률안 필터 적용
         if selected_bill != '전체':
-            bill_df = bill_df[bill_df['의안명'] == selected_bill]
+            # 괄호 앞의 법률안 이름만 비교
+            bill_df['의안명_순수'] = bill_df['의안명'].apply(lambda x: x.split('(')[0].strip() if '(' in x else x)
+            bill_df = bill_df[bill_df['의안명_순수'] == selected_bill]
+            bill_df = bill_df.drop('의안명_순수', axis=1)
         if selected_proposer != '전체':
             bill_df = bill_df[bill_df['제안자구분'] == selected_proposer]
         if selected_status != '전체':
