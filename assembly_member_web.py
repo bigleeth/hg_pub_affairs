@@ -431,6 +431,40 @@ def main():
     except Exception as e:
         st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
     
+    # 소위원회 정보 표시
+    st.markdown("### 🏛️ 소위원회 정보")
+    try:
+        with open('소위원회정보.json', 'r', encoding='utf-8') as f:
+            subcommittee_data = json.load(f)
+            
+        # 소위원회 정보를 DataFrame으로 변환
+        subcommittee_rows = []
+        for committee_name, parties in subcommittee_data['소위원회_정보'].items():
+            for party, members in parties.items():
+                subcommittee_rows.append({
+                    '소위원회': committee_name,
+                    '정당': party,
+                    '소속의원': ', '.join(members)
+                })
+        
+        subcommittee_df = pd.DataFrame(subcommittee_rows)
+        
+        # 소위원회 필터
+        selected_subcommittee = st.selectbox('소위원회 선택', ['전체'] + sorted(subcommittee_df['소위원회'].unique().tolist()))
+        
+        # 필터링 적용
+        if selected_subcommittee != '전체':
+            subcommittee_df = subcommittee_df[subcommittee_df['소위원회'] == selected_subcommittee]
+        
+        st.dataframe(
+            subcommittee_df,
+            use_container_width=True,
+            hide_index=True,
+            height=200
+        )
+    except Exception as e:
+        st.warning("소위원회 정보를 불러오는 중 오류가 발생했습니다.")
+    
     # 안내 메시지
     st.markdown(f"""
     <div class="info-box">
