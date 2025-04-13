@@ -379,6 +379,13 @@ def main():
         }
     )
     
+    # 국회 바로가기 링크 추가
+    st.markdown("""
+    <div style="text-align: right; margin-top: 10px;">
+        <a href="https://www.assembly.go.kr/" target="_blank">국회 바로가기</a>
+    </div>
+    """, unsafe_allow_html=True)
+    
     # 법률안 발의내역 표시
     st.markdown("### 📜 법률안 발의내역")
     try:
@@ -436,9 +443,6 @@ def main():
     try:
         with open('소위원회정보.json', 'r', encoding='utf-8') as f:
             subcommittee_data = json.load(f)
-            
-        # 수집일시 표시
-        st.markdown(f"<div style='text-align: right; color: #666; font-size: 0.9rem;'>수집일시: {subcommittee_data['메타데이터']['수집일시']}</div>", unsafe_allow_html=True)
             
         # 소위원회 정보를 DataFrame으로 변환
         subcommittee_rows = []
