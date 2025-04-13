@@ -505,7 +505,7 @@ def main():
         </ul>
     </div>
     """, unsafe_allow_html=True)
-    user_feedback = st.text_area("", placeholder="요청사항을 입력해주세요...", height=30)
+    user_feedback = st.text_area("", placeholder="요청사항을 입력해주세요...", max_chars=500)
     
     if user_feedback:
         # 요청사항을 파일에 저장
