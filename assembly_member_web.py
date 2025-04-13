@@ -350,36 +350,32 @@ def main():
     
     # 법률안 발의내역 표시
     st.markdown("### 📜 법률안 발의내역")
-    
-    # 선택된 의원의 법률안 발의내역 조회
-    selected_member = st.selectbox('의원 선택', df['이름'].unique())
-    
-    if selected_member:
-        bills = collect_bill_info(selected_member)
-        if bills:
-            # DataFrame으로 변환
-            bills_df = pd.DataFrame([
-                {
-                    '의안번호': bill['의안번호'],
-                    '의안명': bill['의안명']['text'],
-                    '제안자구분': bill['제안자구분'],
-                    '제안일자': bill['제안일자'],
-                    '의결일자': bill['의결일자'],
-                    '의결결과': bill['의결결과'],
-                    '심사진행상태': bill['심사진행상태']
-                }
-                for bill in bills
-            ])
+    try:
+        with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
+            bill_data = json.load(f)
             
-            # 테이블 표시
-            st.dataframe(
-                bills_df,
-                use_container_width=True,
-                hide_index=True,
-                height=400
-            )
-        else:
-            st.info(f"{selected_member} 의원의 발의 법률안이 없습니다.")
+        # DataFrame으로 변환
+        bill_df = pd.DataFrame([
+            {
+                '의안번호': bill['의안번호'],
+                '의안명': bill['의안명']['text'],
+                '제안자구분': bill['제안자구분'],
+                '제안일자': bill['제안일자'],
+                '의결일자': bill['의결일자'],
+                '의결결과': bill['의결결과'],
+                '심사진행상태': bill['심사진행상태']
+            }
+            for bill in bill_data
+        ])
+        
+        st.dataframe(
+            bill_df,
+            use_container_width=True,
+            hide_index=True,
+            height=400
+        )
+    except Exception as e:
+        st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
     
     # 스냅샷 데이터 보기
     with st.expander("📸 스냅샷 원본 보기", expanded=False):
