@@ -440,21 +440,25 @@ def main():
         # 소위원회 정보를 DataFrame으로 변환
         subcommittee_rows = []
         for committee_name, parties in subcommittee_data['소위원회_정보'].items():
+            row = {'소위원회': committee_name}
             for party, members in parties.items():
-                subcommittee_rows.append({
-                    '소위원회': committee_name,
-                    '정당': party,
-                    '소속의원': ', '.join(members)
-                })
+                row[party] = ', '.join(members)
+            subcommittee_rows.append(row)
         
         subcommittee_df = pd.DataFrame(subcommittee_rows)
         
-        # 소위원회 필터
-        selected_subcommittee = st.selectbox('소위원회 선택', ['전체'] + sorted(subcommittee_df['소위원회'].unique().tolist()))
+        # 소위원회 필터를 왼쪽에 배치
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            selected_subcommittee = st.selectbox('소위원회 필터', ['전체'] + sorted(subcommittee_df['소위원회'].unique().tolist()))
         
         # 필터링 적용
         if selected_subcommittee != '전체':
             subcommittee_df = subcommittee_df[subcommittee_df['소위원회'] == selected_subcommittee]
+        
+        # 열 순서 재정렬
+        column_order = ['소위원회', '더불어민주당', '국민의힘', '비교섭단체']
+        subcommittee_df = subcommittee_df.reindex(columns=column_order)
         
         st.dataframe(
             subcommittee_df,
