@@ -388,6 +388,18 @@ def main():
     except Exception as e:
         st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
     
+    # 안내 메시지
+    st.markdown(f"""
+    <div class="info-box">
+        <h3>📌 안내사항</h3>
+        <ul>
+            <li>기재위 소속 및 기타 수은 업무 관련 의원실 정보가 나타나 있습니다.</li>
+            <li>변경사항은 스냅샷 기준일({snapshot_date}) 대비 현시점 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
+            <li>데이터는 매일 자동으로 업데이트됩니다.</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
     # 스냅샷 데이터 보기
     with st.expander("📸 스냅샷 원본 보기", expanded=False):
         if snapshot_data:
@@ -418,18 +430,6 @@ def main():
             )
         else:
             st.warning("스냅샷 데이터가 없습니다.")
-    
-    # 안내 메시지
-    st.markdown(f"""
-    <div class="info-box">
-        <h3>📌 안내사항</h3>
-        <ul>
-            <li>기재위 소속 및 기타 수은 업무 관련 의원실 정보가 나타나 있습니다.</li>
-            <li>변경사항은 스냅샷 기준일({snapshot_date}) 대비 현시점 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
-            <li>데이터는 매일 자동으로 업데이트됩니다.</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
 
     # 저작권 정보
     st.markdown("""
