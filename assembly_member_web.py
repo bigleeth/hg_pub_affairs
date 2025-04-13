@@ -484,45 +484,15 @@ def main():
     except Exception as e:
         st.warning("소위원회 정보를 불러오는 중 오류가 발생했습니다.")
     
-    # 안내 메시지
-    st.markdown(f"""
-    <div class="info-box">
-        <h3>📌 안내사항</h3>
-        <ul>
-            <li>수은 업무 관련 국회의원 및 법률안 발의내역 등 정보가 나타나 있습니다.</li>
-            <li>국회의원 정보 변경사항은 스냅샷 기준일({snapshot_date}) 대비 현시점 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
-            <li>데이터는 매일 자동으로 업데이트됩니다.</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
     # 요청사항 메시지 박스 추가
     st.markdown("""
     <div class="info-box">
         <h3>💬 요청사항</h3>
         <ul>
-            <li>요청사항을 남겨주세요 (모니터링 국회의원, 법률안 추가 등)</li>
+            <li>요청사항은 쪽지로 보내주세요. (모니터링 국회의원, 법률안 추가 등)</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
-    user_feedback = st.text_area("", placeholder="요청사항을 입력해주세요...", max_chars=500)
-    
-    if user_feedback:
-        # 요청사항을 파일에 저장
-        feedback_file = 'user_feedback.txt'
-        with open(feedback_file, 'a', encoding='utf-8') as f:
-            f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {user_feedback}\n")
-        
-        # GitHub에 업로드
-        try:
-            subprocess.run(['git', 'add', feedback_file], check=True)
-            subprocess.run(['git', 'commit', '-m', f'Add user feedback: {user_feedback[:50]}...'], check=True)
-            subprocess.run(['git', 'push'], check=True)
-            st.success("요청사항이 저장되었습니다. 감사합니다!")
-        except subprocess.CalledProcessError as e:
-            st.error(f"GitHub 업로드 중 오류가 발생했습니다: {str(e)}")
-        except Exception as e:
-            st.error(f"오류가 발생했습니다: {str(e)}")
 
     # 스냅샷 데이터 보기
     with st.expander("📸 스냅샷 원본 보기", expanded=False):
