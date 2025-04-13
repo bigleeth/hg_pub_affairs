@@ -4,6 +4,7 @@ import json
 import os
 from datetime import datetime
 import requests
+from bs4 import BeautifulSoup
 
 # 페이지 설정
 st.set_page_config(
@@ -223,6 +224,77 @@ def highlight_changes(df, snapshot_data):
     
     return df
 
+def collect_bill_info(member_name):
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Origin': 'https://likms.assembly.go.kr',
+        'Referer': 'https://likms.assembly.go.kr/bill/main.do',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+
+    data = {
+        'tabMenuType': 'billSimpleSearch',
+        'billKindExclude': '',
+        'hjNm': member_name,
+        'ageFrom': '22',
+        'ageTo': '22',
+        'billKind': '전체',
+        'generalResult': '',
+        'proposerKind': '전체',
+        'proposeGubn': '전체',
+        'proposer': '',
+        'empNo': '',
+        'billNo': '',
+        'billName': '',
+    }
+
+    response = requests.post('https://likms.assembly.go.kr/bill/BillSearchResult.do', headers=headers, data=data)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    bills = []
+    table = soup.find('table', {'summary': '검색결과의 의안번호, 의안명, 제안자구분, 제안일자, 의결일자, 의결결과, 주요내용, 심사진행상태 정보'})
+    
+    if table:
+        rows = table.find_all('tr')[1:]  # 헤더 행 제외
+        for row in rows:
+            cols = row.find_all('td')
+            if len(cols) >= 8:
+                # 의안명 링크에서 billId 추출
+                bill_name_link = cols[1].find('a')
+                bill_id = ''
+                if bill_name_link and 'onclick' in bill_name_link.attrs:
+                    onclick_text = bill_name_link['onclick']
+                    if 'fGoDetail' in onclick_text:
+                        bill_id = onclick_text.split("'")[1]
+                
+                # 주요내용 링크에서 billId 추출
+                content_link = cols[6].find('a')
+                content_bill_id = ''
+                if content_link and 'onclick' in content_link.attrs:
+                    onclick_text = content_link['onclick']
+                    if 'ajaxShowListSummaryLayerPopup' in onclick_text:
+                        content_bill_id = onclick_text.split("'")[1]
+                
+                bill = {
+                    '의안번호': cols[0].text.strip(),
+                    '의안명': {
+                        'text': cols[1].text.strip(),
+                        'link': f'javascript:fGoDetail(\'{bill_id}\', \'billSimpleSearch\')' if bill_id else ''
+                    },
+                    '제안자구분': cols[2].text.strip(),
+                    '제안일자': cols[3].text.strip(),
+                    '의결일자': cols[4].text.strip(),
+                    '의결결과': cols[5].text.strip(),
+                    '주요내용': {
+                        'text': '주요내용 보기',
+                        'link': f'javascript:ajaxShowListSummaryLayerPopup(\'{content_bill_id}\')' if content_bill_id else ''
+                    },
+                    '심사진행상태': cols[7].text.strip()
+                }
+                bills.append(bill)
+    
+    return bills
+
 # 메인 함수
 def main():
     # 데이터 로드
@@ -276,6 +348,39 @@ def main():
         }
     )
     
+    # 법률안 발의내역 표시
+    st.markdown("### 📜 법률안 발의내역")
+    
+    # 선택된 의원의 법률안 발의내역 조회
+    selected_member = st.selectbox('의원 선택', df['이름'].unique())
+    
+    if selected_member:
+        bills = collect_bill_info(selected_member)
+        if bills:
+            # DataFrame으로 변환
+            bills_df = pd.DataFrame([
+                {
+                    '의안번호': bill['의안번호'],
+                    '의안명': bill['의안명']['text'],
+                    '제안자구분': bill['제안자구분'],
+                    '제안일자': bill['제안일자'],
+                    '의결일자': bill['의결일자'],
+                    '의결결과': bill['의결결과'],
+                    '심사진행상태': bill['심사진행상태']
+                }
+                for bill in bills
+            ])
+            
+            # 테이블 표시
+            st.dataframe(
+                bills_df,
+                use_container_width=True,
+                hide_index=True,
+                height=400
+            )
+        else:
+            st.info(f"{selected_member} 의원의 발의 법률안이 없습니다.")
+    
     # 스냅샷 데이터 보기
     with st.expander("📸 스냅샷 원본 보기", expanded=False):
         if snapshot_data:
@@ -313,7 +418,7 @@ def main():
         <h3>📌 안내사항</h3>
         <ul>
             <li>기재위 소속 및 기타 수은 업무 관련 의원실 정보가 나타나 있습니다.</li>
-            <li>변경사항은 스냅샷 기준일({snapshot_date}) 대비 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
+            <li>변경사항은 스냅샷 기준일({snapshot_date}) 대비 현시점 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
             <li>데이터는 매일 자동으로 업데이트됩니다.</li>
         </ul>
     </div>
