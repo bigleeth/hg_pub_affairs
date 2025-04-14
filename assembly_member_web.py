@@ -489,7 +489,7 @@ def main():
     <div style="margin-top: 20px; margin-bottom: 10px;">
         <h3 style="text-align: left;">📊 알리오 공시정보</h3>
         <div style="text-align: right;">
-            <a href="https://www.alio.go.kr/search/searchTotal.do?word=%EC%88%98%EC%B6%9C%EC%9E%85%EC%9D%80%ED%96%89&apbaNm=&targetList=jeonggi%2Csusi%2CinfoCenter%2Cemployment%2Cbid%2Cnotice&attachFileYn=Y&sortType=LATEST" target="_blank">알리오 공시 바로가기</a>
+            <a href="https://www.alio.go.kr/" target="_blank">알리오 공시 바로가기</a>
         </div>
     </div>
     """, unsafe_allow_html=True)
