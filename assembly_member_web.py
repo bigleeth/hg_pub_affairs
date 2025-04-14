@@ -92,11 +92,18 @@ def fetch_assembly_member_data():
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
             "Accept": "application/json, text/javascript, */*; q=0.01",
-            "X-Requested-With": "XMLHttpRequest"
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://www.assembly.go.kr/assm/memact/congressman/memCond/memCondListAjax.do"
         }
         params = {
             "currentPage": 1,
-            "rowPerPage": 300
+            "rowPerPage": 300,
+            "memNm": "",
+            "polyCd": "",
+            "origCd": "",
+            "shrtCd": "",
+            "electionNum": "",
+            "pageSize": 300
         }
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
@@ -131,12 +138,21 @@ def fetch_bill_data():
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
             "Accept": "application/json, text/javascript, */*; q=0.01",
-            "X-Requested-With": "XMLHttpRequest"
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://likms.assembly.go.kr/bill/main.do"
         }
         params = {
             "currentPage": 1,
             "rowPerPage": 100,
-            "billKind": "BILL"  # 법률안
+            "billKind": "BILL",  # 법률안
+            "billName": "",
+            "proposerKind": "",
+            "proposerName": "",
+            "commCd": "",
+            "billNo": "",
+            "billStatus": "",
+            "startDate": "",
+            "endDate": ""
         }
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
@@ -171,12 +187,16 @@ def fetch_subcommittee_data():
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
             "Accept": "application/json, text/javascript, */*; q=0.01",
-            "X-Requested-With": "XMLHttpRequest"
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://www.assembly.go.kr/assm/comm/commList.do"
         }
         params = {
             "currentPage": 1,
             "rowPerPage": 100,
-            "commCd": "C0101"  # 소위원회 코드
+            "commCd": "C0101",  # 소위원회 코드
+            "commNm": "",
+            "chairNm": "",
+            "commType": "SUBCOMMITTEE"
         }
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
