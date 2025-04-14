@@ -440,7 +440,7 @@ def main():
         st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
     
     # 소위원회 정보 표시
-    st.markdown("### 🪑 소위원회 정보")
+    st.markdown("### 🐮 소위원회 정보")
     try:
         with open('소위원회정보.json', 'r', encoding='utf-8') as f:
             subcommittee_data = json.load(f)
@@ -484,10 +484,11 @@ def main():
     except Exception as e:
         st.warning("소위원회 정보를 불러오는 중 오류가 발생했습니다.")
     
-    # 알리오 링크 추가
+    # 알리오 공시정보
     st.markdown("""
     <div style="text-align: right; margin-top: 20px; margin-bottom: 10px;">
-        <a href="https://www.alio.go.kr/search/searchTotal.do?word=%EC%88%98%EC%B6%9C%EC%9E%85%EC%9D%80%ED%96%89&apbaNm=&targetList=jeonggi%2Csusi%2CinfoCenter%2Cemployment%2Cbid%2Cnotice&attachFileYn=Y&sortType=LATEST" target="_blank">알리오 바로가기</a>
+        <h3>📊 알리오 공시정보</h3>
+        <a href="https://www.alio.go.kr/search/searchTotal.do?word=%EC%88%98%EC%B6%9C%EC%9E%85%EC%9D%80%ED%96%89&apbaNm=&targetList=jeonggi%2Csusi%2CinfoCenter%2Cemployment%2Cbid%2Cnotice&attachFileYn=Y&sortType=LATEST" target="_blank">알리오 공시 바로가기</a>
     </div>
     """, unsafe_allow_html=True)
 
