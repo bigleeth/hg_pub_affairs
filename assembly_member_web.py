@@ -98,6 +98,7 @@ def fetch_assembly_member_data():
         # 데이터 파싱 및 처리
         soup = BeautifulSoup(response.text, 'html.parser')
         members = []
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         for member in soup.find_all('div', class_='member-list'):
             member_info = {
@@ -106,15 +107,14 @@ def fetch_assembly_member_data():
                 '당선횟수': member.find('div', class_='election').text.strip(),
                 '선거구': member.find('div', class_='district').text.strip(),
                 '소속위원회': member.find('div', class_='committee').text.strip(),
-                'URL': f"https://www.assembly.go.kr{member.find('a')['href']}",
-                '수집일시': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                'URL': f"https://www.assembly.go.kr{member.find('a')['href']}"
             }
             members.append(member_info)
         
-        return pd.DataFrame(members)
+        return pd.DataFrame(members), current_time
     except Exception as e:
         st.error(f"국회의원 정보 조회 중 오류 발생: {str(e)}")
-        return None
+        return None, None
 
 # 법률안 정보 조회 함수
 @st.cache_data(ttl=3600)
@@ -129,6 +129,7 @@ def fetch_bill_data():
         
         soup = BeautifulSoup(response.text, 'html.parser')
         bills = []
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         for bill in soup.find_all('tr', class_='bill-row'):
             bill_info = {
@@ -138,15 +139,14 @@ def fetch_bill_data():
                 '제안일자': bill.find('td', class_='propose-date').text.strip(),
                 '의결일자': bill.find('td', class_='decision-date').text.strip(),
                 '의결결과': bill.find('td', class_='decision-result').text.strip(),
-                '심사진행상태': bill.find('td', class_='status').text.strip(),
-                '수집일시': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                '심사진행상태': bill.find('td', class_='status').text.strip()
             }
             bills.append(bill_info)
         
-        return pd.DataFrame(bills)
+        return pd.DataFrame(bills), current_time
     except Exception as e:
         st.error(f"법률안 정보 조회 중 오류 발생: {str(e)}")
-        return None
+        return None, None
 
 # 소위원회 정보 조회 함수
 @st.cache_data(ttl=3600)
@@ -161,21 +161,21 @@ def fetch_subcommittee_data():
         
         soup = BeautifulSoup(response.text, 'html.parser')
         subcommittees = []
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         for committee in soup.find_all('div', class_='committee-info'):
             committee_info = {
                 '소위원회': committee.find('div', class_='name').text.strip(),
                 '더불어민주당': committee.find('div', class_='democratic-party').text.strip(),
                 '국민의힘': committee.find('div', class_='people-power').text.strip(),
-                '비교섭단체': committee.find('div', class_='other-parties').text.strip(),
-                '수집일시': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                '비교섭단체': committee.find('div', class_='other-parties').text.strip()
             }
             subcommittees.append(committee_info)
         
-        return pd.DataFrame(subcommittees)
+        return pd.DataFrame(subcommittees), current_time
     except Exception as e:
         st.error(f"소위원회 정보 조회 중 오류 발생: {str(e)}")
-        return None
+        return None, None
 
 # 스냅샷 데이터 로드 함수
 @st.cache_data
@@ -203,9 +203,9 @@ def load_snapshot():
 # 메인 함수
 def main():
     # 실시간 데이터 조회
-    df = fetch_assembly_member_data()
-    bill_df = fetch_bill_data()
-    subcommittee_df = fetch_subcommittee_data()
+    df, member_collect_time = fetch_assembly_member_data()
+    bill_df, bill_collect_time = fetch_bill_data()
+    subcommittee_df, subcommittee_collect_time = fetch_subcommittee_data()
     
     # 스냅샷 데이터 로드
     snapshot_data, snapshot_date = load_snapshot()
@@ -235,7 +235,7 @@ def main():
             filtered_df = filtered_df[filtered_df['선거구'] == selected_district]
         
         # 데이터 표시
-        st.markdown("### 🏛️ 국회의원 정보")
+        st.markdown(f"### 🏛️ 국회의원 정보 (수집일시: {member_collect_time})")
         st.dataframe(
             filtered_df,
             use_container_width=True,
@@ -272,7 +272,7 @@ def main():
             filtered_bill_df = filtered_bill_df[filtered_bill_df['심사진행상태'] == selected_status]
         
         # 데이터 표시
-        st.markdown("### 📜 법률안 발의내역")
+        st.markdown(f"### 📜 법률안 발의내역 (수집일시: {bill_collect_time})")
         st.dataframe(
             filtered_bill_df,
             use_container_width=True,
@@ -298,7 +298,7 @@ def main():
             filtered_subcommittee_df = filtered_subcommittee_df[filtered_subcommittee_df['소위원회'] == selected_subcommittee]
         
         # 데이터 표시
-        st.markdown("### 🪑 소위원회 정보")
+        st.markdown(f"### 🪑 소위원회 정보 (수집일시: {subcommittee_collect_time})")
         st.dataframe(
             filtered_subcommittee_df,
             use_container_width=True,
@@ -348,8 +348,7 @@ def main():
                     '보좌관': ','.join(member.get('보좌관', [])),
                     '선임비서관': ','.join(member.get('선임비서관', [])),
                     '비서관': ','.join(member.get('비서관', [])),
-                    'URL': member['메타데이터']['url'],
-                    '스냅샷 수집일시': member['메타데이터']['수집일시']
+                    'URL': member['메타데이터']['url']
                 }
                 for member in snapshot_data
             ])
