@@ -83,68 +83,122 @@ st.markdown("""
     <h1 style="margin-bottom: 1rem;">🚀국회 모니터링 - 수은 대외팀🚀</h1>
 """, unsafe_allow_html=True)
 
-# 데이터 로드 함수
-@st.cache_data(ttl=86400)  # 24시간(86400초)마다 캐시 갱신
-def load_data():
+# 실시간 데이터 조회 함수
+@st.cache_data(ttl=3600)  # 1시간마다 캐시 갱신
+def fetch_assembly_member_data():
     try:
-        # GitHub에서 최신 데이터 가져오기
-        response = requests.get('https://raw.githubusercontent.com/your-repo/assembly_member_data.json')
-        if response.status_code == 200:
-            data = response.json()
-            
-            # 로컬 파일에 저장
-            with open('assembly_member_data.json', 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
-        else:
-            # GitHub에서 가져오기 실패 시 로컬 파일 사용
-            with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-        # 데이터프레임으로 변환
-        df = pd.DataFrame([
-            {
-                '이름': member['국회의원']['이름'],
-                '정당': member['국회의원'].get('정당', '정보 없음'),
-                '당선횟수': member['국회의원']['당선횟수'][:2],
-                '선거구': member['국회의원']['선거구'],
-                '소속위원회': member['국회의원']['소속위원회'],
-                '보좌관': ','.join(member['보좌관']),
-                '선임비서관': ','.join(member['선임비서관']),
-                '비서관': ','.join(member['비서관']),
-                'URL': member['메타데이터']['url'],
-                '수집일시': member['메타데이터']['수집일시']
-            }
-            for member in data
-        ])
+        # 국회의원 정보 조회
+        url = "https://www.assembly.go.kr/assm/memact/congressman/memCond/memCondListAjax.do"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+        params = {
+            "currentPage": 1,
+            "rowPerPage": 300
+        }
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
         
-        return df
+        # JSON 데이터 파싱
+        data = response.json()
+        members = []
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        for member in data.get('memberList', []):
+            member_info = {
+                '이름': member.get('empNm', ''),
+                '정당': member.get('polyNm', ''),
+                '당선횟수': member.get('reeleGbnNm', ''),
+                '선거구': member.get('origNm', ''),
+                '소속위원회': member.get('shrtNm', ''),
+                'URL': f"https://www.assembly.go.kr/assm/memact/congressman/memCond/memCondListAjax.do?currentPage=1&rowPerPage=10&memNo={member.get('memNo', '')}"
+            }
+            members.append(member_info)
+        
+        return pd.DataFrame(members), current_time
     except Exception as e:
-        st.error(f"데이터 로드 중 오류 발생: {str(e)}")
-        return None
+        st.error(f"국회의원 정보 조회 중 오류 발생: {str(e)}")
+        return None, None
 
-# 스냅샷 리셋 함수
-def reset_snapshot(password):
-    if password == "0204":
-        try:
-            # 현재 데이터를 스냅샷으로 저장
-            with open('assembly_member_data.json', 'r', encoding='utf-8') as f:
-                current_data = json.load(f)
-            
-            # 현재 시간을 메타데이터에 추가
-            current_time = datetime.now().strftime("%Y년 %m월 %d일 %H시 %M분")
-            for member in current_data:
-                member['메타데이터']['스냅샷_생성일시'] = current_time
-            
-            # 스냅샷 파일에 저장
-            with open('assembly_member_snapshot.json', 'w', encoding='utf-8') as f:
-                json.dump(current_data, f, ensure_ascii=False, indent=4)
-            
-            st.success("스냅샷이 성공적으로 업데이트되었습니다.")
-            st.rerun()
-        except Exception as e:
-            st.error(f"스냅샷 업데이트 중 오류 발생: {str(e)}")
-    else:
-        st.error("비밀번호가 올바르지 않습니다.")
+# 의안 정보 조회 함수
+@st.cache_data(ttl=3600)  # 1시간마다 캐시 갱신
+def fetch_bill_data():
+    try:
+        # 의안 정보 조회
+        url = "https://likms.assembly.go.kr/bill/billSearchResultAjax.do"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+        params = {
+            "currentPage": 1,
+            "rowPerPage": 100,
+            "billKind": "BILL"  # 법률안
+        }
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        
+        # JSON 데이터 파싱
+        data = response.json()
+        bills = []
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        for bill in data.get('billList', []):
+            bill_info = {
+                '의안번호': bill.get('billNo', ''),
+                '의안명': bill.get('billName', ''),
+                '제안자': bill.get('proposer', ''),
+                '제안일자': bill.get('proposeDt', ''),
+                '소관위원회': bill.get('commName', ''),
+                'URL': f"https://likms.assembly.go.kr/bill/billDetail.do?billId={bill.get('billId', '')}"
+            }
+            bills.append(bill_info)
+        
+        return pd.DataFrame(bills), current_time
+    except Exception as e:
+        st.error(f"의안 정보 조회 중 오류 발생: {str(e)}")
+        return None, None
+
+# 소위원회 정보 조회 함수
+@st.cache_data(ttl=3600)  # 1시간마다 캐시 갱신
+def fetch_subcommittee_data():
+    try:
+        # 소위원회 정보 조회
+        url = "https://www.assembly.go.kr/assm/comm/commListAjax.do"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+        params = {
+            "currentPage": 1,
+            "rowPerPage": 100,
+            "commCd": "C0101"  # 소위원회 코드
+        }
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        
+        # JSON 데이터 파싱
+        data = response.json()
+        subcommittees = []
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        for committee in data.get('commList', []):
+            committee_info = {
+                '소위원회명': committee.get('commNm', ''),
+                '위원장': committee.get('chairNm', ''),
+                '위원수': committee.get('memCnt', ''),
+                'URL': f"https://www.assembly.go.kr/assm/comm/commListAjax.do?currentPage=1&rowPerPage=10&commCd={committee.get('commCd', '')}"
+            }
+            subcommittees.append(committee_info)
+        
+        return pd.DataFrame(subcommittees), current_time
+    except Exception as e:
+        st.error(f"소위원회 정보 조회 중 오류 발생: {str(e)}")
+        return None, None
 
 # 스냅샷 데이터 로드 함수
 @st.cache_data
@@ -169,320 +223,118 @@ def load_snapshot():
         st.error(f"스냅샷 로드 중 오류 발생: {str(e)}")
         return None, None
 
-# 데이터 비교 및 하이라이트 함수
-def get_flat_string(value):
-    if isinstance(value, list):
-        return ','.join([str(x).strip() for x in value])
-    return str(value).strip()
-
-def compare_members(current, snapshot):
-    diffs = []
-    for key in ['이름', '정당', '당선횟수', '선거구', '소속위원회', '보좌관', '선임비서관', '비서관']:
-        cur_val = get_flat_string(current.get(key, ''))
-        snap_val = get_flat_string(snapshot.get(key, ''))
-        if cur_val != snap_val:
-            diffs.append(f"{key} 변경")
-    return ', '.join(diffs)
-
-def highlight_changes(df, snapshot_data):
-    if snapshot_data is None:
-        return df
-        
-    # 스냅샷 데이터를 빠른 조회를 위한 딕셔너리로 변환
-    snapshot_dict = {
-        member['메타데이터']['url']: {
-            '이름': member['국회의원']['이름'],
-            '정당': member['국회의원'].get('정당', ''),
-            '당선횟수': member['국회의원'].get('당선횟수', ''),
-            '선거구': member['국회의원'].get('선거구', ''),
-            '소속위원회': member['국회의원'].get('소속위원회', ''),
-            '보좌관': member.get('보좌관', []),
-            '선임비서관': member.get('선임비서관', []),
-            '비서관': member.get('비서관', [])
-        }
-        for member in snapshot_data
-    }
-    
-    # 변경사항을 저장할 새로운 열 추가
-    df['변경사항'] = ''
-    
-    # 각 행에 대해 변경사항 비교
-    for idx, row in df.iterrows():
-        url = row['URL']
-        if url in snapshot_dict:
-            current_flat = {
-                '이름': row['이름'],
-                '정당': row['정당'],
-                '당선횟수': row['당선횟수'],
-                '선거구': row['선거구'],
-                '소속위원회': row['소속위원회'],
-                '보좌관': row['보좌관'],
-                '선임비서관': row['선임비서관'],
-                '비서관': row['비서관']
-            }
-            snapshot_flat = snapshot_dict[url]
-            df.at[idx, '변경사항'] = compare_members(current_flat, snapshot_flat)
-    
-    return df
-
-def collect_bill_info(member_name):
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Origin': 'https://likms.assembly.go.kr',
-        'Referer': 'https://likms.assembly.go.kr/bill/main.do',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-
-    data = {
-        'tabMenuType': 'billSimpleSearch',
-        'billKindExclude': '',
-        'hjNm': member_name,
-        'ageFrom': '22',
-        'ageTo': '22',
-        'billKind': '전체',
-        'generalResult': '',
-        'proposerKind': '전체',
-        'proposeGubn': '전체',
-        'proposer': '',
-        'empNo': '',
-        'billNo': '',
-        'billName': '',
-    }
-
-    response = requests.post('https://likms.assembly.go.kr/bill/BillSearchResult.do', headers=headers, data=data)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    
-    bills = []
-    table = soup.find('table', {'summary': '검색결과의 의안번호, 의안명, 제안자구분, 제안일자, 의결일자, 의결결과, 주요내용, 심사진행상태 정보'})
-    
-    if table:
-        rows = table.find_all('tr')[1:]  # 헤더 행 제외
-        for row in rows:
-            cols = row.find_all('td')
-            if len(cols) >= 8:
-                # 의안명 링크에서 billId 추출
-                bill_name_link = cols[1].find('a')
-                bill_id = ''
-                if bill_name_link and 'onclick' in bill_name_link.attrs:
-                    onclick_text = bill_name_link['onclick']
-                    if 'fGoDetail' in onclick_text:
-                        bill_id = onclick_text.split("'")[1]
-                
-                # 주요내용 링크에서 billId 추출
-                content_link = cols[6].find('a')
-                content_bill_id = ''
-                if content_link and 'onclick' in content_link.attrs:
-                    onclick_text = content_link['onclick']
-                    if 'ajaxShowListSummaryLayerPopup' in onclick_text:
-                        content_bill_id = onclick_text.split("'")[1]
-                
-                bill = {
-                    '의안번호': cols[0].text.strip(),
-                    '의안명': {
-                        'text': cols[1].text.strip(),
-                        'link': f'javascript:fGoDetail(\'{bill_id}\', \'billSimpleSearch\')' if bill_id else ''
-                    },
-                    '제안자구분': cols[2].text.strip(),
-                    '제안일자': cols[3].text.strip(),
-                    '의결일자': cols[4].text.strip(),
-                    '의결결과': cols[5].text.strip(),
-                    '주요내용': {
-                        'text': '주요내용 보기',
-                        'link': f'javascript:ajaxShowListSummaryLayerPopup(\'{content_bill_id}\')' if content_bill_id else ''
-                    },
-                    '심사진행상태': cols[7].text.strip()
-                }
-                bills.append(bill)
-    
-    return bills
-
 # 메인 함수
 def main():
-    # 데이터 로드
-    df = load_data()
-    if df is None:
-        return
-
+    # 실시간 데이터 조회
+    df, member_collect_time = fetch_assembly_member_data()
+    bill_df, bill_collect_time = fetch_bill_data()
+    subcommittee_df, subcommittee_collect_time = fetch_subcommittee_data()
+    
     # 스냅샷 데이터 로드
     snapshot_data, snapshot_date = load_snapshot()
     
-    # 데이터프레임 표시
-    if snapshot_data:
-        df = highlight_changes(df, snapshot_data)
-        st.markdown("### 🏛️ 국회의원 정보 (변경 항목 표시)")
-    else:
-        st.markdown("### 🏛️ 국회의원 정보")
-    
-    # 필터링 옵션
-    st.sidebar.header("필터")
-    
-    # 국회의원 정보 필터
-    st.sidebar.subheader("국회의원 정보 필터")
-    # 정당 필터
-    parties = ['전체'] + sorted(df['정당'].unique().tolist())
-    selected_party = st.sidebar.selectbox('정당', parties)
-    
-    # 소속위원회 필터
-    committees = ['전체'] + sorted(df['소속위원회'].unique().tolist())
-    selected_committee = st.sidebar.selectbox('소속위원회', committees)
-    
-    # 선거구 필터
-    districts = ['전체'] + sorted(df['선거구'].unique().tolist())
-    selected_district = st.sidebar.selectbox('선거구', districts)
-    
-    # 법률안 필터
-    st.sidebar.subheader("법률안 필터")
-    try:
-        with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
-            bill_data = json.load(f)
-            
-        # 법률안 이름 목록 추출 (괄호 안의 개인 이름 제외)
-        bill_names = []
-        for bill in bill_data:
-            bill_name = bill['의안명']['text']
-            # 괄호 앞의 법률안 이름만 추출
-            if '(' in bill_name:
-                bill_name = bill_name.split('(')[0].strip()
-            if bill_name not in bill_names:
-                bill_names.append(bill_name)
-        bill_names = sorted(bill_names)
-        selected_bill = st.sidebar.selectbox('법률안', ['전체'] + bill_names)
+    if df is not None:
+        # 필터링 옵션
+        st.sidebar.header("필터")
         
-        # 제안자구분 필터
-        proposer_types = ['전체'] + sorted(list(set(bill['제안자구분'] for bill in bill_data)))
-        selected_proposer = st.sidebar.selectbox('제안자구분', proposer_types)
+        # 국회의원 정보 필터
+        st.sidebar.subheader("국회의원 정보 필터")
+        parties = ['전체'] + sorted(df['정당'].unique().tolist())
+        selected_party = st.sidebar.selectbox('정당', parties)
         
-        # 심사진행상태 필터
-        status_types = ['전체'] + sorted(list(set(bill['심사진행상태'] for bill in bill_data)))
-        selected_status = st.sidebar.selectbox('심사진행상태', status_types)
+        committees = ['전체'] + sorted(df['소속위원회'].unique().tolist())
+        selected_committee = st.sidebar.selectbox('소속위원회', committees)
         
-    except Exception as e:
-        st.sidebar.warning("법률안 필터 데이터를 불러오는 중 오류가 발생했습니다.")
-    
-    # 필터링 적용
-    filtered_df = df.copy()  # 원본 데이터프레임 복사
-    if selected_party != '전체':
-        filtered_df = filtered_df[filtered_df['정당'] == selected_party]
-    if selected_committee != '전체':
-        filtered_df = filtered_df[filtered_df['소속위원회'] == selected_committee]
-    if selected_district != '전체':
-        filtered_df = filtered_df[filtered_df['선거구'] == selected_district]
-    
-    # 데이터 표시
-    st.dataframe(
-        filtered_df,
-        use_container_width=True,
-        hide_index=True,
-        height=500,
-        column_config={
-            "URL": st.column_config.LinkColumn("URL"),
-            "수집일시": st.column_config.DatetimeColumn("수집일시")
-        }
-    )
-    
-    # 국회 바로가기 링크 추가
-    st.markdown("""
-    <div style="text-align: right; margin-top: 10px;">
-        <a href="https://www.assembly.go.kr/" target="_blank">국회 바로가기</a>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # 법률안 발의내역 표시
-    st.markdown("### 📜 법률안 발의내역")
-    try:
-        with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
-            bill_data = json.load(f)
-            
-        # DataFrame으로 변환
-        bill_df = pd.DataFrame([
-            {
-                '의안번호': bill['의안번호'],
-                '의안명': bill['의안명']['text'],
-                '제안자구분': bill['제안자구분'],
-                '제안일자': bill['제안일자'],
-                '의결일자': bill['의결일자'],
-                '의결결과': bill['의결결과'],
-                '심사진행상태': bill['심사진행상태'],
-                '수집일시': bill.get('수집일시', '')
-            }
-            for bill in bill_data
-        ])
+        districts = ['전체'] + sorted(df['선거구'].unique().tolist())
+        selected_district = st.sidebar.selectbox('선거구', districts)
         
-        # 법률안 필터 적용
-        if selected_bill != '전체':
-            # 괄호 앞의 법률안 이름만 비교
-            bill_df['의안명_순수'] = bill_df['의안명'].apply(lambda x: x.split('(')[0].strip() if '(' in x else x)
-            bill_df = bill_df[bill_df['의안명_순수'] == selected_bill]
-            bill_df = bill_df.drop('의안명_순수', axis=1)
-        if selected_proposer != '전체':
-            bill_df = bill_df[bill_df['제안자구분'] == selected_proposer]
-        if selected_status != '전체':
-            bill_df = bill_df[bill_df['심사진행상태'] == selected_status]
+        # 필터링 적용
+        filtered_df = df.copy()
+        if selected_party != '전체':
+            filtered_df = filtered_df[filtered_df['정당'] == selected_party]
+        if selected_committee != '전체':
+            filtered_df = filtered_df[filtered_df['소속위원회'] == selected_committee]
+        if selected_district != '전체':
+            filtered_df = filtered_df[filtered_df['선거구'] == selected_district]
         
-        # 제안일자 기준으로 내림차순 정렬
-        bill_df['제안일자'] = pd.to_datetime(bill_df['제안일자']).dt.strftime('%Y-%m-%d')
-        bill_df = bill_df.sort_values('제안일자', ascending=False)
-        
+        # 데이터 표시
+        st.markdown(f"### 🏛️ 국회의원 정보 (수집일시: {member_collect_time})")
         st.dataframe(
-            bill_df,
+            filtered_df,
+            use_container_width=True,
+            hide_index=True,
+            height=500
+        )
+        
+        # 국회 바로가기 링크
+        st.markdown("""
+        <div style="text-align: right; margin-top: 10px;">
+            <a href="https://www.assembly.go.kr/" target="_blank">국회 바로가기</a>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    if bill_df is not None:
+        # 법률안 필터
+        st.sidebar.subheader("법률안 필터")
+        bill_names = ['전체'] + sorted(bill_df['의안명'].unique().tolist())
+        selected_bill = st.sidebar.selectbox('법률안', bill_names)
+        
+        proposer_types = ['전체'] + sorted(bill_df['제안자'].unique().tolist())
+        selected_proposer = st.sidebar.selectbox('제안자', proposer_types)
+        
+        status_types = ['전체'] + sorted(bill_df['소관위원회'].unique().tolist())
+        selected_status = st.sidebar.selectbox('소관위원회', status_types)
+        
+        # 필터링 적용
+        filtered_bill_df = bill_df.copy()
+        if selected_bill != '전체':
+            filtered_bill_df = filtered_bill_df[filtered_bill_df['의안명'] == selected_bill]
+        if selected_proposer != '전체':
+            filtered_bill_df = filtered_bill_df[filtered_bill_df['제안자'] == selected_proposer]
+        if selected_status != '전체':
+            filtered_bill_df = filtered_bill_df[filtered_bill_df['소관위원회'] == selected_status]
+        
+        # 데이터 표시
+        st.markdown(f"### 📜 법률안 발의내역 (수집일시: {bill_collect_time})")
+        st.dataframe(
+            filtered_bill_df,
             use_container_width=True,
             hide_index=True,
             height=200
         )
         
-        # 의안정보시스템 링크 추가
+        # 의안정보시스템 링크
         st.markdown("""
         <div style="text-align: right; margin-top: 10px;">
             <a href="https://likms.assembly.go.kr/bill/main.do" target="_blank">의안정보시스템 바로가기</a>
         </div>
         """, unsafe_allow_html=True)
-    except Exception as e:
-        st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
     
-    # 소위원회 정보 표시
-    st.markdown("### 🪑 소위원회 정보")
-    try:
-        with open('소위원회정보.json', 'r', encoding='utf-8') as f:
-            subcommittee_data = json.load(f)
-            
-        # 소위원회 정보를 DataFrame으로 변환
-        subcommittee_rows = []
-        for committee_name, parties in subcommittee_data['소위원회_정보'].items():
-            row = {'소위원회': committee_name}
-            for party, members in parties.items():
-                row[party] = ', '.join(members)
-            row['수집일시'] = subcommittee_data['메타데이터']['수집일시']
-            subcommittee_rows.append(row)
-        
-        subcommittee_df = pd.DataFrame(subcommittee_rows)
-        
-        # 소위원회 필터를 왼쪽 사이드바로 이동
+    if subcommittee_df is not None:
+        # 소위원회 필터
         st.sidebar.subheader("소위원회 필터")
-        selected_subcommittee = st.sidebar.selectbox('소위원회', ['전체'] + sorted(subcommittee_df['소위원회'].unique().tolist()))
+        selected_subcommittee = st.sidebar.selectbox('소위원회', ['전체'] + sorted(subcommittee_df['소위원회명'].unique().tolist()))
         
         # 필터링 적용
+        filtered_subcommittee_df = subcommittee_df.copy()
         if selected_subcommittee != '전체':
-            subcommittee_df = subcommittee_df[subcommittee_df['소위원회'] == selected_subcommittee]
+            filtered_subcommittee_df = filtered_subcommittee_df[filtered_subcommittee_df['소위원회명'] == selected_subcommittee]
         
-        # 열 순서 재정렬
-        column_order = ['소위원회', '더불어민주당', '국민의힘', '비교섭단체', '수집일시']
-        subcommittee_df = subcommittee_df.reindex(columns=column_order)
-        
+        # 데이터 표시
+        st.markdown(f"### 🪑 소위원회 정보 (수집일시: {subcommittee_collect_time})")
         st.dataframe(
-            subcommittee_df,
+            filtered_subcommittee_df,
             use_container_width=True,
             hide_index=True,
             height=200
         )
         
-        # 기획재정위원회 링크 추가
+        # 기획재정위원회 링크
         st.markdown("""
         <div style="text-align: right; margin-top: 10px;">
             <a href="https://finance.na.go.kr/" target="_blank">기획재정위원회 바로가기</a>
         </div>
         """, unsafe_allow_html=True)
-    except Exception as e:
-        st.warning("소위원회 정보를 불러오는 중 오류가 발생했습니다.")
     
     # 안내 메시지
     st.markdown(f"""
@@ -519,8 +371,7 @@ def main():
                     '보좌관': ','.join(member.get('보좌관', [])),
                     '선임비서관': ','.join(member.get('선임비서관', [])),
                     '비서관': ','.join(member.get('비서관', [])),
-                    'URL': member['메타데이터']['url'],
-                    '스냅샷 수집일시': member['메타데이터']['수집일시']
+                    'URL': member['메타데이터']['url']
                 }
                 for member in snapshot_data
             ])
@@ -528,11 +379,7 @@ def main():
                 snapshot_df,
                 use_container_width=True,
                 hide_index=True,
-                height=400,
-                column_config={
-                    "URL": st.column_config.LinkColumn("URL"),
-                    "스냅샷 수집일시": st.column_config.DatetimeColumn("스냅샷 수집일시")
-                }
+                height=400
             )
         else:
             st.warning("스냅샷 데이터가 없습니다.")
