@@ -1,0 +1,38 @@
+name: Daily JSON Update
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Every day at 09:00 KST
+  workflow_dispatch:      # Optional: allows manual run
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+              python-version: '3.13t'
+              allow-prereleases: true
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 pandas
+
+      - name: Run update script
+        run: python update_json.py
+
+      - name: Commit & push
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add *.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "🔄 Daily auto-update $(date +'%Y-%m-%d')"
+            git push
