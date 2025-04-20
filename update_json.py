@@ -68,10 +68,11 @@ def extract_member_data(soup, name, member_id, response):
             "메타데이터": {
                 "url": f"https://www.assembly.go.kr/members/22nd/{member_id}",
                 "status_code": response.status_code,
-                "수집일시": datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
+                "수집일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
         }
     except Exception as e:
+        print(f"[ERROR] Failed to extract {name}: {e}")
         return {
             "국회의원": {
                 "이름": name,
@@ -84,25 +85,31 @@ def extract_member_data(soup, name, member_id, response):
             "메타데이터": {
                 "url": f"https://www.assembly.go.kr/members/22nd/{member_id}",
                 "status_code": 500,
-                "수집일시": datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
+                "수집일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
         }
 
-all_member_data = []
-for name, member_id in members:
-    try:
-        url = f'https://www.assembly.go.kr/members/22nd/{member_id}'
-        response = requests.get(url, cookies=cookies_members, headers=headers_members)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        data = extract_member_data(soup, name, member_id, response)
-        all_member_data.append(data)
-    except Exception as e:
-        print(f"[ERROR] {name} failed: {e}")
+def update_member_data():
+    updated_data = []
+    for name, member_id in members:
+        try:
+            url = f'https://www.assembly.go.kr/members/22nd/{member_id}'
+            response = requests.get(url, cookies=cookies_members, headers=headers_members)
+            if response.status_code != 200:
+                raise ValueError(f"HTTP {response.status_code}")
+            soup = BeautifulSoup(response.text, 'html.parser')
+            data = extract_member_data(soup, name, member_id, response)
+            updated_data.append(data)
+            print(f"[OK] {name} updated.")
+        except Exception as e:
+            print(f"[ERROR] {name} failed: {e}")
+    return updated_data
+
+all_member_data = update_member_data()
 
 with open('assembly_member_data.json', 'w', encoding='utf-8') as f:
     json.dump(all_member_data, f, ensure_ascii=False, indent=4)
 print("✅ 국회의원 정보 저장 완료")
-
 
 ### =============== 의안 정보 수집 ===============
 def collect_bill_info(bill_name):
