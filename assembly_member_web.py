@@ -500,7 +500,7 @@ def main():
         <h3>📌 안내사항</h3>
         <ul>
             <li>수은 업무 관련 국회의원 및 법률안 발의내역 등 정보가 나타나 있습니다.</li>
-            <li>국회의원 정보 변경사항은 스냅샷 기준일({snapshot_date}) 대비 현시점 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
+            <li>국회의원 정보 변경사항은 기준일({snapshot_date}) 스냅샷 대비 현시점 달라진 내역을 나타냅니다.(예: 소속위원회 변경, 보좌진 변경 등)</li>
             <li>데이터는 매일 자동으로 업데이트됩니다.</li>
         </ul>
     </div>
@@ -517,7 +517,7 @@ def main():
     """, unsafe_allow_html=True)
 
     # 스냅샷 데이터 보기
-    with st.expander("📸 스냅샷 원본 보기", expanded=False):
+    with st.expander("📸 기준일 스냅샷 보기", expanded=False):
         if snapshot_data:
             snapshot_df = pd.DataFrame([
                 {
