@@ -239,27 +239,43 @@ import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-cookies_subcmt = {
+# Replace these cookie values with fresh ones from your browser session
+cookies = {
     '_ga': 'GA1.1.1112369851.1736910875',
-    'JSESSIONID': 'your_valid_session',
+    '_ga_LMTWB4HKMN': 'GS1.1.1736991545.2.1.1736991545.0.0.0',
+    '_fwb': 'your_updated_value',
+    'PCID': 'your_updated_value',
+    'PHAROSVISITOR': 'your_updated_value',
+    'JSESSIONID': 'your_updated_value',
+    'wcs_bt': 'your_updated_value',
+    '_ga_LGKB5H3Z08': 'your_updated_value'
 }
-headers_subcmt = {
+
+headers = {
     'Accept': 'application/json, text/javascript, */*; q=0.01',
+    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Connection': 'keep-alive',
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
     'Origin': 'https://finance.na.go.kr:444',
     'Referer': 'https://finance.na.go.kr:444/cmmit/mem/cmmitMemList/subCmt.do?menuNo=2000014',
-    'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5)',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
     'X-Requested-With': 'XMLHttpRequest',
+    # 'X-CSRF-TOKEN': 'your-token-if-required',
+    'requestAJAX': 'true'
 }
-data_subcmt = {
-    'hgNm': '', 'subCmtNm': '', 'pageUnit': '100', 'pageIndex': '1'
+
+data = {
+    'hgNm': '',
+    'subCmtNm': '',
+    'pageUnit': '9',
+    'pageIndex': '1'
 }
 
 response = requests.post(
     'https://finance.na.go.kr:444/cmmit/mem/cmmitMemList/getSubCmitLst.json',
-    cookies=cookies_subcmt,
-    headers=headers_subcmt,
-    data=data_subcmt,
+    cookies=cookies,
+    headers=headers,
+    data=data
 )
 
 if response.status_code != 200:
@@ -269,17 +285,14 @@ json_data = response.json()
 structured = {}
 
 for entry in json_data.get("resultList", []):
-    subcmt_name = entry.get("subCmtNm", "이름 없음")
-    party = entry.get("polyNm", "기타")
-    raw_name = entry.get("hgNm", "").strip()
-    job = entry.get("jobResponNm", "").strip()
-    
-    # Check for chair indicator either in name or role
-    is_chair = "◈" in raw_name or job == "소위원장"
-    name = raw_name.replace("◈", "").strip()
-    display_name = f"{name}(장)" if is_chair else name
+    subcommittee = entry.get("subCmtNm", "이름 없음") + f"({entry.get('memCnt', '0')}인)"
+    party = entry.get("polyNm", "무소속")
+    name = entry.get("hgNm", "이름 없음")
+    # Interpret 소위원장 by jobResponNm or prefix symbol
+    is_chair = "(장)" if "위원장" in entry.get("jobResponNm", "") or entry.get("hgNm", "").startswith("◈") else ""
+    display_name = name.replace("◈", "") + is_chair
 
-    structured.setdefault(subcmt_name, {}).setdefault(party, []).append(display_name)
+    structured.setdefault(subcommittee, {}).setdefault(party, []).append(display_name)
 
 metadata = {
     "수집일시": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S"),
@@ -296,4 +309,3 @@ with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 
 print("✅ 소위원회 정보 저장 완료")
-
