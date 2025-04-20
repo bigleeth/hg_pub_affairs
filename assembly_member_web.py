@@ -309,8 +309,10 @@ def main():
     # 데이터프레임 표시
     if snapshot_data:
         df = highlight_changes(df, snapshot_data)
+        df = df.sort_values('이름', ascending=True)
         st.markdown("### 🏛️ 국회의원 정보 (변경 항목 표시)")
     else:
+        df = df.sort_values('이름', ascending=True)
         st.markdown("### 🏛️ 국회의원 정보")
     
     # 필터링 옵션
