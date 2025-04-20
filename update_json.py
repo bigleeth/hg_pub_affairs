@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import json
 import pandas as pd
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 ### =============== 국회의원 정보 수집 ===============
 cookies_members = {
@@ -130,7 +131,7 @@ def extract_member_data(soup, name, member_id, response):
             "메타데이터": {
                 "url": f"https://www.assembly.go.kr/members/22nd/{member_id}",
                 "status_code": response.status_code,
-                "수집일시": datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
+                "수집일시": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S")
             }
         }
     except Exception as e:
@@ -146,7 +147,7 @@ def extract_member_data(soup, name, member_id, response):
             "메타데이터": {
                 "url": f"https://www.assembly.go.kr/members/22nd/{member_id}",
                 "status_code": 500,
-                "수집일시": datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
+                "수집일시": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S")
             }
         }
 
@@ -209,7 +210,7 @@ def collect_bill_info(bill_name):
                         'link': f"javascript:ajaxShowListSummaryLayerPopup('{content_id}')" if content_id else ''
                     },
                     '심사진행상태': cols[7].text.strip(),
-                    '수집일시': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    "수집일시": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S")
                 })
     return bills
 
@@ -275,7 +276,7 @@ result = {
     }
 }
 metadata = {
-    "수집일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    "수집일시": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S"),
     "url": "https://finance.na.go.kr:444/cmmit/mem/cmmitMemList/subCmt.do",
     "status_code": response.status_code
 }
