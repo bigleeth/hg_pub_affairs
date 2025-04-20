@@ -19,11 +19,73 @@ headers_members = {
     'Connection': 'keep-alive'
 }
 members = [
-    ("김영진", "KIMYOUNGJIN"), ("정태호", "JUNGTAEHO"), ("김상훈", "KIMSANGHOON"), ("윤한홍", "YOONHANHONG"),
+        ("김영진", "KIMYOUNGJIN"),
+    ("정태호", "JUNGTAEHO"),
+    ("김상훈", "KIMSANGHOON"),
+    ("윤한홍", "YOONHANHONG"),
+    ("강훈식", "KANGHOONSIK"),
+    ("김영환", "KIMYOUNGWHAN"),
+    ("김태년", "KIMTAENYEON"),
+    ("박홍근", "PARKHONGKEUN"),
+    ("신영대", "SHINYEONGDAE"),
+    ("안도걸", "AHNDOGEOL"),
+    ("오기형", "OHGIHYOUNG"),
+    ("윤호중", "YUNHOJUNG"),
+    ("임광현", "LIMKWANGHYUN"),
+    ("정성호", "JUNGSUNGHO"),
+    ("정일영", "CHUNGILYOUNG"),
+    ("진성준", "JINSUNGJOON"),
+    ("손언서", "SONGEONSEOG"),
+    ("박수영", "PARKSOOYOUNG"),
+    ("구자근", "KUJAKEUN"),
+    ("박대출", "PARKDAECHUL"),
+    ("박성훈", "PARKSUNGHOON"),
+    ("신동욱", "SHINDONGUK"),
+    ("이인선", "LEEINSEON"),
+    ("이종훤", "LEEJONHWOOK"),
+    ("최은석", "CHOIEUNSEOK"),
+    ("차규근", "CHAGYUGEUN"),
+    ("천하람", "CHUNHARAM"),
+    ("황명선", "HWANGMYEONGSEON"),
+    ("최기상", "CHOIKISANG"),
+    ("유동수", "YOODONGSOO"),
+    ("이은주", "LEEUNJU"),
+    ("박수민", "PARKSOOMIN")
     # ... Add the rest
 ]
 party_mapping = {
-    "김영진": "더불어민주당", "정태호": "더불어민주당", "김상훈": "국민의힘", "윤한홍": "국민의힘",
+    "정태호": "더불어민주당",
+    "김영진": "더불어민주당",
+    "김영환": "더불어민주당",
+    "김태년": "더불어민주당",
+    "박홍근": "더불어민주당",
+    "신영대": "더불어민주당",
+    "안도걸": "더불어민주당",
+    "오기형": "더불어민주당",
+    "윤호중": "더불어민주당",
+    "임광현": "더불어민주당",
+    "정성호": "더불어민주당",
+    "정일영": "더불어민주당",
+    "진성준": "더불어민주당",
+    "황명선": "더불어민주당",
+    "최기상": "더불어민주당",
+    "이언주": "더불어민주당",
+    "유동수": "더불어민주당",
+    "강훈식": "더불어민주당",
+    "김상훈": "국민의힘",
+    "윤한홍": "국민의힘",
+    "신동욱": "국민의힘",
+    "송언석": "국민의힘",
+    "박수영": "국민의힘",
+    "구자근": "국민의힘",
+    "박대출": "국민의힘",
+    "박성훈": "국민의힘",
+    "박수민": "국민의힘",
+    "이인선": "국민의힘",
+    "이종욱": "국민의힘",
+    "최은석": "국민의힘",
+    "차규근": "조국혁신당",
+    "천하람": "개혁신당"
     # ... Add all
 }
 
@@ -68,11 +130,10 @@ def extract_member_data(soup, name, member_id, response):
             "메타데이터": {
                 "url": f"https://www.assembly.go.kr/members/22nd/{member_id}",
                 "status_code": response.status_code,
-                "수집일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                "수집일시": datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
             }
         }
     except Exception as e:
-        print(f"[ERROR] Failed to extract {name}: {e}")
         return {
             "국회의원": {
                 "이름": name,
@@ -85,31 +146,25 @@ def extract_member_data(soup, name, member_id, response):
             "메타데이터": {
                 "url": f"https://www.assembly.go.kr/members/22nd/{member_id}",
                 "status_code": 500,
-                "수집일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                "수집일시": datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
             }
         }
 
-def update_member_data():
-    updated_data = []
-    for name, member_id in members:
-        try:
-            url = f'https://www.assembly.go.kr/members/22nd/{member_id}'
-            response = requests.get(url, cookies=cookies_members, headers=headers_members)
-            if response.status_code != 200:
-                raise ValueError(f"HTTP {response.status_code}")
-            soup = BeautifulSoup(response.text, 'html.parser')
-            data = extract_member_data(soup, name, member_id, response)
-            updated_data.append(data)
-            print(f"[OK] {name} updated.")
-        except Exception as e:
-            print(f"[ERROR] {name} failed: {e}")
-    return updated_data
-
-all_member_data = update_member_data()
+all_member_data = []
+for name, member_id in members:
+    try:
+        url = f'https://www.assembly.go.kr/members/22nd/{member_id}'
+        response = requests.get(url, cookies=cookies_members, headers=headers_members)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        data = extract_member_data(soup, name, member_id, response)
+        all_member_data.append(data)
+    except Exception as e:
+        print(f"[ERROR] {name} failed: {e}")
 
 with open('assembly_member_data.json', 'w', encoding='utf-8') as f:
     json.dump(all_member_data, f, ensure_ascii=False, indent=4)
 print("✅ 국회의원 정보 저장 완료")
+
 
 ### =============== 의안 정보 수집 ===============
 def collect_bill_info(bill_name):
