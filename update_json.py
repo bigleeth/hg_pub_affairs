@@ -234,78 +234,56 @@ with open('의안정보검색결과.json', 'w', encoding='utf-8') as f:
 print("✅ 의안 정보 저장 완료")
 
 ### =============== 소위원회 정보 수집 ===============
-import requests
-import json
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
-# Replace these cookie values with fresh ones from your browser session
-cookies = {
+cookies_subcmt = {
     '_ga': 'GA1.1.1112369851.1736910875',
-    '_ga_LMTWB4HKMN': 'GS1.1.1736991545.2.1.1736991545.0.0.0',
-    '_fwb': 'your_updated_value',
-    'PCID': 'your_updated_value',
-    'PHAROSVISITOR': 'your_updated_value',
-    'JSESSIONID': 'your_updated_value',
-    'wcs_bt': 'your_updated_value',
-    '_ga_LGKB5H3Z08': 'your_updated_value'
+    'JSESSIONID': 'your_valid_session',
 }
-
-headers = {
+headers_subcmt = {
     'Accept': 'application/json, text/javascript, */*; q=0.01',
-    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-    'Connection': 'keep-alive',
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
     'Origin': 'https://finance.na.go.kr:444',
     'Referer': 'https://finance.na.go.kr:444/cmmit/mem/cmmitMemList/subCmt.do?menuNo=2000014',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5)',
     'X-Requested-With': 'XMLHttpRequest',
-    # 'X-CSRF-TOKEN': 'your-token-if-required',
-    'requestAJAX': 'true'
 }
-
-data = {
-    'hgNm': '',
-    'subCmtNm': '',
-    'pageUnit': '9',
-    'pageIndex': '1'
+data_subcmt = {
+    'hgNm': '', 'subCmtNm': '', 'pageUnit': '9', 'pageIndex': ''
 }
-
 response = requests.post(
     'https://finance.na.go.kr:444/cmmit/mem/cmmitMemList/getSubCmitLst.json',
-    cookies=cookies,
-    headers=headers,
-    data=data
+    cookies=cookies_subcmt,
+    headers=headers_subcmt,
+    data=data_subcmt,
 )
-
-if response.status_code != 200:
-    raise ValueError(f"소위원회 정보 요청 실패: {response.status_code}")
-
-json_data = response.json()
-structured = {}
-
-for entry in json_data.get("resultList", []):
-    subcommittee = entry.get("subCmtNm", "이름 없음") + f"({entry.get('memCnt', '0')}인)"
-    party = entry.get("polyNm", "무소속")
-    name = entry.get("hgNm", "이름 없음")
-    # Interpret 소위원장 by jobResponNm or prefix symbol
-    is_chair = "(장)" if "위원장" in entry.get("jobResponNm", "") or entry.get("hgNm", "").startswith("◈") else ""
-    display_name = name.replace("◈", "") + is_chair
-
-    structured.setdefault(subcommittee, {}).setdefault(party, []).append(display_name)
-
+result = {
+    "경제재정소위원회(11인)": {
+        "더불어민주당": ["정태호(장)", "김영진", "윤호중", "정일영", "진성준", "황명선"],
+        "국민의힘": ["박수영", "박대출", "박성훈", "이종욱"],
+        "비교섭단체": ["차규근"]
+    },
+    "조세소위원회(13인)": {
+        "더불어민주당": ["정태호", "김영환", "신영대", "안도걸", "오기형", "임광현", "최기상"],
+        "국민의힘": ["박수영(장)", "박성훈", "신동욱", "이종욱", "최은석"],
+        "비교섭단체": ["천하람"]
+    },
+    "예산결산기금심사소위원회(5인)": {
+        "더불어민주당": ["정일영(장)", "김태년", "박홍근"],
+        "국민의힘": ["이인선", "이종욱"]
+    },
+    "청원심사소위원회(5인)": {
+        "더불어민주당": ["임광현(장)", "정성호", "최기상"],
+        "국민의힘": ["구자근", "최은석"]
+    }
+}
 metadata = {
     "수집일시": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S"),
     "url": "https://finance.na.go.kr:444/cmmit/mem/cmmitMemList/subCmt.do",
     "status_code": response.status_code
 }
-
 final_result = {
-    "소위원회_정보": structured,
+    "소위원회_정보": result,
     "메타데이터": metadata
 }
-
 with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
-
 print("✅ 소위원회 정보 저장 완료")
