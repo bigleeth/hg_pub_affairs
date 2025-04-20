@@ -84,7 +84,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 데이터 로드 함수
-@st.cache_data(ttl=86400)  # 24시간(86400초)마다 캐시 갱신
+@st.cache_data(ttl=0)  # 24시간(86400초)마다 캐시 갱신
 def load_data():
     try:
         # GitHub에서 최신 데이터 가져오기
@@ -147,7 +147,7 @@ def reset_snapshot(password):
         st.error("비밀번호가 올바르지 않습니다.")
 
 # 스냅샷 데이터 로드 함수
-@st.cache_data
+@st.cache_data(ttl=0)
 def load_snapshot():
     try:
         if os.path.exists('assembly_member_snapshot.json'):
@@ -427,7 +427,7 @@ def main():
             bill_df,
             use_container_width=True,
             hide_index=True,
-            height=200
+            height=350
         )
         
         # 의안정보시스템 링크 추가
@@ -472,7 +472,7 @@ def main():
             subcommittee_df,
             use_container_width=True,
             hide_index=True,
-            height=200
+            height=190
         )
         
         # 기획재정위원회 링크 추가
