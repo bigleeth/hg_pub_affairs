@@ -472,7 +472,7 @@ def main():
             subcommittee_df,
             use_container_width=True,
             hide_index=True,
-            height=170
+            height=175
         )
         
         # 기획재정위원회 링크 추가
