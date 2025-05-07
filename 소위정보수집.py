@@ -9,23 +9,22 @@ session = requests.Session()
 # 메인 페이지 URL
 main_url = 'https://finance.na.go.kr:444/cmmit/mem/cmmitMemList/subCmt.do?menuNo=2000014'
 
-# 기본 헤더
+# 헤더 정의
 headers = {
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'ko-KR,ko;q=0.9',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
     'Pragma': 'no-cache',
-    'Upgrade-Insecure-Requests': '1',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
 }
 
 try:
-    # 메인 페이지 접속
+    # 메인 페이지 요청
     main_response = session.get(main_url, headers=headers)
     main_response.raise_for_status()
-    
-    # CSRF 토큰 추출
+
+    # CSRF 메타 태그 추출
     soup = BeautifulSoup(main_response.text, 'html.parser')
     csrf_parameter = soup.find('meta', {'name': '_csrf_parameter'})
     csrf_header = soup.find('meta', {'name': '_csrf_header'})
@@ -38,7 +37,7 @@ try:
     csrf_header_value = csrf_header['content']
     csrf_token_value = csrf_token['content']
 
-    # API 요청 헤더 설정
+    # POST 요청 헤더 설정
     api_headers = {
         'Accept': 'application/json, text/javascript, */*; q=0.01',
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -57,7 +56,6 @@ try:
         csrf_parameter_value: csrf_token_value
     }
 
-    # POST 요청
     response = session.post(
         'https://finance.na.go.kr:444/cmmit/mem/cmmitMemList/getSubCmitLst.json',
         headers=api_headers,
@@ -77,39 +75,52 @@ except Exception as e:
     print(f"오류 발생: {e}")
     exit(1)
 
-# 결과 파싱
+# ◈이름 → 이름(장)으로 변환하는 함수
+def parse_members(member_str):
+    members = []
+    for m in member_str.split(','):
+        m = m.strip()
+        if m.startswith('◈'):
+            m = m.lstrip('◈')  # remove diamond
+            if '(장)' not in m:
+                name_part, sep, han_part = m.partition('(')
+                m = f"(장){name_part}{sep}{han_part}"  # insert "(장)" before names
+        members.append(m)
+    return members
+
+# 결과 딕셔너리 구성
 result = {}
-for item in response_data["resultList"]:
+
+for item in response_data.get("resultList", []):
     committee_name = item["sbcmtNm"]
     count = item["naasCnt"]
     key = f"{committee_name}({count}인)"
     
     parties = {}
     if item.get("poly1NaasNm") and item.get("poly1NaasCn"):
-        parties[item["poly1NaasNm"]] = [x.strip(" ◈") for x in item["poly1NaasCn"].split(",")]
+        parties[item["poly1NaasNm"]] = parse_members(item["poly1NaasCn"])
     if item.get("poly2NaasNm") and item.get("poly2NaasCn"):
-        parties[item["poly2NaasNm"]] = [x.strip(" ◈") for x in item["poly2NaasCn"].split(",")]
+        parties[item["poly2NaasNm"]] = parse_members(item["poly2NaasCn"])
     if item.get("poly99NaasNm") and item.get("poly99NaasCn"):
-        parties[item["poly99NaasNm"]] = [x.strip(" ◈") for x in item["poly99NaasCn"].split(",")]
-
+        parties[item["poly99NaasNm"]] = parse_members(item["poly99NaasCn"])
+    
     result[key] = parties
 
-# 메타데이터 추가
+# 메타데이터 구성
 metadata = {
     "수집일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     "url": main_url,
     "status_code": response.status_code
 }
 
-# 최종 결과 구성
+# 최종 결과 저장
 final_result = {
     "소위원회_정보": result,
     "메타데이터": metadata
 }
 
-# JSON 파일로 저장
-output_path = '소위원회정보.json'
-with open(output_path, 'w', encoding='utf-8') as f:
+output_file = '소위원회정보.json'
+with open(output_file, 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 
-print(f"\n✅ JSON 저장 완료: {output_path}")
+print(f"\n✅ JSON 저장 완료: {output_file}")
