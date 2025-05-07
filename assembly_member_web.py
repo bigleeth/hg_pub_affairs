@@ -522,6 +522,7 @@ def main():
     # 스냅샷 데이터 보기
     with st.expander("📸 기준일 스냅샷 보기", expanded=False):
         if snapshot_data:
+            # 스냅샷 데이터프레임 생성
             snapshot_df = pd.DataFrame([
                 {
                     '이름': member['국회의원']['이름'],
@@ -532,12 +533,29 @@ def main():
                     '보좌관': ','.join(member.get('보좌관', [])),
                     '선임비서관': ','.join(member.get('선임비서관', [])),
                     '비서관': ','.join(member.get('비서관', [])),
-                    '변경사항': row['변경사항'],
                     'URL': member['메타데이터']['url'],
                     '스냅샷 수집일시': member['메타데이터']['수집일시']
                 }
-                for idx, row in snapshot_df.iterrows()
+                for member in snapshot_data
             ])
+            
+            # 변경사항 비교
+            for idx, row in snapshot_df.iterrows():
+                url = row['URL']
+                if url in snapshot_dict:
+                    current_flat = {
+                        '이름': row['이름'],
+                        '정당': row['정당'],
+                        '당선횟수': row['당선횟수'],
+                        '선거구': row['선거구'],
+                        '소속위원회': row['소속위원회'],
+                        '보좌관': row['보좌관'],
+                        '선임비서관': row['선임비서관'],
+                        '비서관': row['비서관']
+                    }
+                    snapshot_flat = snapshot_dict[url]
+                    snapshot_df.at[idx, '변경사항'] = compare_members(current_flat, snapshot_flat)
+            
             st.dataframe(
                 snapshot_df,
                 use_container_width=True,
