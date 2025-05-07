@@ -51,8 +51,8 @@ members = [
     ("최기상", "CHOIKISANG"),
     ("유동수", "YOODONGSOO"),
     ("이은주", "LEEUNJU"),
-    ("박수민", "PARKSOOMIN")
-    ("권영세", "KWONYOUNGSE")
+    ("박수민", "PARKSOOMIN"),
+    ("권영세", "KWONYOUNGSE"),
     ("윤영석", "YOONYOUNGSEOK")
     # ... Add the rest
 ]
