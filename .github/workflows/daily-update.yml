@@ -2,7 +2,7 @@ name: Daily JSON Update
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Every day at 09:00 KST
+    - cron: '0 22 * * *'  # Every day at 09:00 KST
   workflow_dispatch:
 
 jobs:
