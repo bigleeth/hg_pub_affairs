@@ -54,7 +54,8 @@ members = [
     ("박수민", "PARKSOOMIN"),
     ("이만희", "LEEMANHEE"),
     ("권영세", "KWONYOUNGSE"),
-    ("윤영석", "YOONYOUNGSEOK")
+    ("윤영석", "YOONYOUNGSEOK"),
+    ("유상범", "YOOSANGBUM")
     # ... Add the rest
 ]
 party_mapping = {
@@ -91,6 +92,7 @@ party_mapping = {
     "권영세": "국민의힘",
     "윤영석": "국민의힘",
     "이만희": "국민의힘",
+    "유상범": "국민의힘",
     "차규근": "조국혁신당",
     "천하람": "개혁신당"
     # ... Add all
