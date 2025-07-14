@@ -56,7 +56,7 @@ members = [
     ("권영세", "KWONYOUNGSE"),
     ("윤영석", "YOONYOUNGSEOK"),
     ("유상범", "YOOSANGBUM")
-    # ... Add the rest
+    ("임이자", "LIMLEEJA")
 ]
 party_mapping = {
     "정태호": "더불어민주당",
@@ -93,6 +93,7 @@ party_mapping = {
     "윤영석": "국민의힘",
     "이만희": "국민의힘",
     "유상범": "국민의힘",
+    "임이자": "국민의힘",
     "차규근": "조국혁신당",
     "천하람": "개혁신당"
     # ... Add all
