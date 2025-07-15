@@ -55,7 +55,7 @@ members = [
     ("이만희", "LEEMANHEE"),
     ("권영세", "KWONYOUNGSE"),
     ("윤영석", "YOONYOUNGSEOK"),
-    ("유상범", "YOOSANGBUM")
+    ("유상범", "YOOSANGBUM"),
     ("임이자", "LIMLEEJA")
 ]
 party_mapping = {
