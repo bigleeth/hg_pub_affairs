@@ -497,6 +497,21 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
+    # 주요 기사 스크랩
+    st.markdown("""
+    <div style="margin-top: 30px; margin-bottom: 10px;">
+        <h3 style="text-align: left;">📰 주요 기사 스크랩</h3>
+        <div style="text-align: right;">
+            <a href="https://docs.google.com/spreadsheets/d/1S6kHf5QTrSKUUraZs_zYujEt5569orB7m_CqYhC_siI/edit?usp=sharing" target="_blank">원본 보기</a>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    components.iframe(
+        src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQdsIMlKeN1DL9NL61PfPSFCszbYJvKtKViXhYMcJZKvHFJ9HO2fwAa_mCuKoQjoSP8_HyI7UrG0NH2/pubhtml?widget=true&headers=false",
+        height=500,
+        scrolling=True
+
     # 안내 메시지
     st.markdown(f"""
     <div class="info-box">
