@@ -379,7 +379,7 @@ def main():
     """, unsafe_allow_html=True)
 
     components.iframe(
-        src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQdsIMlKeN1DL9NL61PfPSFCszbYJvKtKViXhYMcJZKvHFJ9HO2fwAa_mCuKoQjoSP8_HyI7UrG0NH2/pubhtml?widget=true&headers=false",
+        src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRyMSJz7jKdfcfXxCyZO_PChyvF4RJneX0udD7blirttmnkCRdHo_oZK0LXe-KssExONv0TA9kNJGAg/pubhtml",
         height=500,
         scrolling=True
     )
