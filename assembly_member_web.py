@@ -10,6 +10,15 @@ import subprocess
 import gspread
 from google.oauth2.service_account import Credentials
 
+scope = [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive'
+]
+
+credentials = Credentials.from_service_account_file('service_account.json', scopes=scope)
+gc = gspread.authorize(credentials)
+
+
 # 페이지 설정
 st.set_page_config(
     page_title="국회 모니터링(수은 대외팀)",
