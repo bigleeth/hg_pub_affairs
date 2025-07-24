@@ -7,6 +7,11 @@ import requests
 from bs4 import BeautifulSoup
 import subprocess
 
+import gspread
+from google.oauth2.service_account import Credentials
+
+pip install gspread google-auth
+
 # 페이지 설정
 st.set_page_config(
     page_title="국회 모니터링(수은 대외팀)",
@@ -299,6 +304,31 @@ def collect_bill_info(member_name):
 
 import streamlit.components.v1 as components
 
+def load_news_scrap_df():
+    try:
+        # Define the required scopes
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+
+        # Load service account credentials (JSON file must be present in same directory or specify full path)
+        creds = Credentials.from_service_account_file(
+            "service_account.json",  # 🔁 change this to your actual file name
+            scopes=scope
+        )
+
+        # Authorize and open the sheet
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key("1S6kHf5QTrSKUUraZs_zYujEt5569orB7m_CqYhC_siI")
+        worksheet = sheet.worksheet("Sheet1")
+
+        # Convert to DataFrame
+        data = worksheet.get_all_records()
+        df = pd.DataFrame(data)
+        return df
+    except Exception as e:
+        st.error(f"🛑 Google Sheet 로드 오류: {str(e)}")
+        return pd.DataFrame()
+
+
 # 메인 함수
 def main():
     # 데이터 로드
@@ -500,21 +530,23 @@ def main():
     """, unsafe_allow_html=True)
 
     # ✅ 주요 기사 스크랩
-    st.markdown("""
-    <div style="margin-top: 30px; margin-bottom: 10px;">
-        <h3 style="text-align: left;">📰 주요 기사 스크랩</h3>
-        <div style="text-align: right;">
-            <a href="https://docs.google.com/spreadsheets/d/1S6kHf5QTrSKUUraZs_zYujEt5569orB7m_CqYhC_siI/edit?usp=sharing" target="_blank">원본 보기</a>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    components.iframe(
-        src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRyMSJz7jKdfcfXxCyZO_PChyvF4RJneX0udD7blirttmnkCRdHo_oZK0LXe-KssExONv0TA9kNJGAg/pubhtml",
-        height=500,
-        scrolling=True
-    )
-
+    st.markdown("### 📰 주요 기사 스크랩")
+    news_df = load_news_scrap_df()
+    if not news_df.empty:
+        st.dataframe(
+            news_df,
+            use_container_width=True,
+            hide_index=True,
+            height=1500,
+            column_config={
+                "Original Link": st.column_config.LinkColumn("Original Link"),
+                "Link": st.column_config.LinkColumn("Link"),
+                "Publication Date": st.column_config.DatetimeColumn("Publication Date")
+            }
+        )
+    else:
+        st.info("스크랩된 기사가 없습니다. 또는 구글 시트 접근 오류입니다.")
+    
     # 안내 메시지
     st.markdown(f"""
     <div class="info-box">
