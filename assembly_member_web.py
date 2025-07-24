@@ -10,8 +10,6 @@ import subprocess
 import gspread
 from google.oauth2.service_account import Credentials
 
-pip install gspread google-auth
-
 # 페이지 설정
 st.set_page_config(
     page_title="국회 모니터링(수은 대외팀)",
