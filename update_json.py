@@ -29,6 +29,7 @@ members = [
     ("김태년", "KIMTAENYEON"),
     ("박홍근", "PARKHONGKEUN"),
     ("신영대", "SHINYEONGDAE"),
+    ("안규백", "AHNGYUBACK"),
     ("안도걸", "AHNDOGEOL"),
     ("오기형", "OHGIHYOUNG"),
     ("윤호중", "YUNHOJUNG"),
@@ -54,17 +55,7 @@ members = [
     ("박수민", "PARKSOOMIN"),
     ("이만희", "LEEMANHEE"),
     ("권영세", "KWONYOUNGSE"),
-    ("윤영석", "YOONYOUNGSEOK"),
-    ("유상범", "YOOSANGBUM"),
-    ("임이자", "LIMLEEJA")
-]
-party_mapping = {
-    "정태호": "더불어민주당",
-    "김영진": "더불어민주당",
-    "김영환": "더불어민주당",
-    "김태년": "더불어민주당",
-    "박홍근": "더불어민주당",
-    "신영대": "더불어민주당",
+    ("윤영석", "YOONYOUNGSEOK")백": "더불어민주당",
     "안도걸": "더불어민주당",
     "오기형": "더불어민주당",
     "윤호중": "더불어민주당",
