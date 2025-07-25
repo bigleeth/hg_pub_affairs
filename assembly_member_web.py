@@ -504,7 +504,7 @@ def main():
             news_df,
             use_container_width=True,
             hide_index=True,
-            height=1000,
+            height=750,
             column_config={
                 "Keyword": st.column_config.TextColumn("키워드"),
                 "Title": st.column_config.TextColumn("제목"),
@@ -514,6 +514,14 @@ def main():
                 "Publication Date": st.column_config.DatetimeColumn("기사 일자"),
             }
         )
+     
+        # 원본 CSV 링크 표시
+        st.markdown(f"""
+        <div style="text-align: right; margin-top: 10px;">
+            <a href="{github_raw_csv_url}" target="_blank">🗂️ 원본 CSV 파일 열기</a>
+        </div>
+        """, unsafe_allow_html=True)
+    
     except Exception as e:
         st.error("❌ 뉴스 스크랩 데이터를 불러오는 중 오류가 발생했습니다.")
         st.exception(e)
