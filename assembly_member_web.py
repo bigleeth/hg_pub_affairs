@@ -409,7 +409,8 @@ def main():
         """, unsafe_allow_html=True)
     except Exception as e:
         st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
-    
+        st.exception(e)  # 상세 에러 표시
+        
     # 소위원회 정보 표시
     st.markdown("### 🐮 소위원회 정보")
     try:
@@ -454,7 +455,6 @@ def main():
         """, unsafe_allow_html=True)
     except Exception as e:
         st.warning("소위원회 정보를 불러오는 중 오류가 발생했습니다.")
-        st.exception(e)  # 상세 에러 표시
         
     # 알리오 공시정보
     st.markdown("""
