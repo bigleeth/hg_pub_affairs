@@ -364,6 +364,13 @@ def main():
         with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
             bill_data = json.load(f)
             
+            bill_names = ['전체'] + sorted({bill['의안명']['text'].split('(')[0].strip() for bill in bill_data if '의안명' in bill and 'text' in bill['의안명']})
+            proposer_types = ['전체'] + sorted({bill['제안자구분'] for bill in bill_data if '제안자구분' in bill})
+            tatuses = ['전체'] + sorted({bill['심사진행상태'] for bill in bill_data if '심사진행상태' in bill})
+            selected_bill = st.sidebar.selectbox('법률안명', bill_names)
+            selected_proposer = st.sidebar.selectbox('제안자구분', proposer_types)
+            selected_status = st.sidebar.selectbox('심사진행상태', statuses)
+        
         # DataFrame으로 변환
         bill_df = pd.DataFrame([
             {
