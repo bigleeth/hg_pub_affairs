@@ -297,8 +297,7 @@ def collect_bill_info(member_name):
     
     return bills
 
-import streamlit.components.v1 as components
-
+# 메인 함수
 def main():
     # 데이터 로드
     df = load_data()
@@ -319,27 +318,60 @@ def main():
     
     # 필터링 옵션
     st.sidebar.header("필터")
+    
+    # 국회의원 정보 필터
     st.sidebar.subheader("국회의원 정보 필터")
-
+    # 정당 필터
     parties = ['전체'] + sorted(df['정당'].unique().tolist())
     selected_party = st.sidebar.selectbox('정당', parties)
     
+    # 소속위원회 필터
     committees = ['전체'] + sorted(df['소속위원회'].unique().tolist())
     selected_committee = st.sidebar.selectbox('소속위원회', committees)
     
+    # 선거구 필터
     districts = ['전체'] + sorted(df['선거구'].unique().tolist())
     selected_district = st.sidebar.selectbox('선거구', districts)
-
-    # 필터 적용
-    filtered_df = df.copy()
+    
+    # 법률안 필터
+    st.sidebar.subheader("법률안 필터")
+    try:
+        with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
+            bill_data = json.load(f)
+            
+        # 법률안 이름 목록 추출 (괄호 안의 개인 이름 제외)
+        bill_names = []
+        for bill in bill_data:
+            bill_name = bill['의안명']['text']
+            # 괄호 앞의 법률안 이름만 추출
+            if '(' in bill_name:
+                bill_name = bill_name.split('(')[0].strip()
+            if bill_name not in bill_names:
+                bill_names.append(bill_name)
+        bill_names = sorted(bill_names)
+        selected_bill = st.sidebar.selectbox('법률안', ['전체'] + bill_names)
+        
+        # 제안자구분 필터
+        proposer_types = ['전체'] + sorted(list(set(bill['제안자구분'] for bill in bill_data)))
+        selected_proposer = st.sidebar.selectbox('제안자구분', proposer_types)
+        
+        # 심사진행상태 필터
+        status_types = ['전체'] + sorted(list(set(bill['심사진행상태'] for bill in bill_data)))
+        selected_status = st.sidebar.selectbox('심사진행상태', status_types)
+        
+    except Exception as e:
+        st.sidebar.warning("법률안 필터 데이터를 불러오는 중 오류가 발생했습니다.")
+    
+    # 필터링 적용
+    filtered_df = df.copy()  # 원본 데이터프레임 복사
     if selected_party != '전체':
         filtered_df = filtered_df[filtered_df['정당'] == selected_party]
     if selected_committee != '전체':
         filtered_df = filtered_df[filtered_df['소속위원회'] == selected_committee]
     if selected_district != '전체':
         filtered_df = filtered_df[filtered_df['선거구'] == selected_district]
-
-    # 국회의원 데이터 표시
+    
+    # 데이터 표시
     st.dataframe(
         filtered_df,
         use_container_width=True,
@@ -350,35 +382,20 @@ def main():
             "수집일시": st.column_config.DatetimeColumn("수집일시")
         }
     )
-
-    # 국회 바로가기 링크
+    
+    # 국회 바로가기 링크 추가
     st.markdown("""
     <div style="text-align: right; margin-top: 10px;">
         <a href="https://www.assembly.go.kr/" target="_blank">국회 바로가기</a>
     </div>
     """, unsafe_allow_html=True)
-
-     # 법률안 발의내역 표시
+    
+    # 법률안 발의내역 표시
     st.markdown("### 📜 법률안 발의내역")
     try:
         with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
             bill_data = json.load(f)
             
-            bill_names = ['전체']
-            proposer_types = ['전체']
-            statuses = ['전체']
-            
-            if isinstance(bill_data, list) and len(bill_data) > 0:
-                try:
-                    bill_names += sorted({bill['의안명']['text'].split('(')[0].strip() for bill in bill_data if '의안명' in bill and 'text' in bill['의안명']})
-                    proposer_types += sorted({bill['제안자구분'] for bill in bill_data if '제안자구분' in bill})
-                    statuses += sorted({bill['심사진행상태'] for bill in bill_data if '심사진행상태' in bill})
-                except Exception as e:
-                    st.warning("필터 항목을 생성하는 중 오류가 발생했습니다.")
-                    st.exception(e)
-
-            
-       
         # DataFrame으로 변환
         bill_df = pd.DataFrame([
             {
@@ -424,8 +441,7 @@ def main():
         """, unsafe_allow_html=True)
     except Exception as e:
         st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
-        st.exception(e)  # 상세 에러 표시
-        
+    
     # 소위원회 정보 표시
     st.markdown("### 🐮 소위원회 정보")
     try:
@@ -470,7 +486,7 @@ def main():
         """, unsafe_allow_html=True)
     except Exception as e:
         st.warning("소위원회 정보를 불러오는 중 오류가 발생했습니다.")
-        
+    
     # 알리오 공시정보
     st.markdown("""
     <div style="margin-top: 20px; margin-bottom: 10px;">
@@ -480,22 +496,6 @@ def main():
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # ✅ 주요 기사 스크랩
-    st.markdown("""
-    <div style="margin-top: 30px; margin-bottom: 10px;">
-        <h3 style="text-align: left;">📰 주요 기사 스크랩</h3>
-        <div style="text-align: right;">
-            <a href="https://docs.google.com/spreadsheets/d/1S6kHf5QTrSKUUraZs_zYujEt5569orB7m_CqYhC_siI/edit?usp=sharing" target="_blank">원본 보기</a>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    components.iframe(
-        src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRyMSJz7jKdfcfXxCyZO_PChyvF4RJneX0udD7blirttmnkCRdHo_oZK0LXe-KssExONv0TA9kNJGAg/pubhtml",
-        height=500,
-        scrolling=True
-    )
 
     # 안내 메시지
     st.markdown(f"""
@@ -518,10 +518,6 @@ def main():
         </ul>
     </div>
     """, unsafe_allow_html=True)
-
-    # (You can continue with your snapshot viewer, etc. below...)
-
-
 
     # 스냅샷 데이터 보기
     with st.expander("📸 기준일 스냅샷 보기", expanded=False):
