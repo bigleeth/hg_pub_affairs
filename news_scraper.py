@@ -69,7 +69,7 @@ news_df = news_df[["Keyword", "Title", "Description", "Original Link", "Link", "
 output_dir = "data"
 os.makedirs(output_dir, exist_ok=True)
 today_str = now.strftime("%Y%m%d")
-file_path = os.path.join(output_dir, f"{today_str}_pub_affair_articles.csv")
+file_path = os.path.join(output_dir, f"pub_affair_articles.csv")
 
 news_df.to_csv(file_path, index=False, encoding="utf-8-sig")
 print(f"\n✅ {len(news_df)} articles saved to: {file_path}")
