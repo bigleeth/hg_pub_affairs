@@ -9,7 +9,7 @@ import subprocess
 
 # 페이지 설정
 st.set_page_config(
-    page_title="국회 모니터링(수은 대외팀)",
+    page_title="국회 모니터링(대외팀)",
     page_icon="🏛️",
     layout="wide"
 )
@@ -490,36 +490,33 @@ def main():
         # 뉴스 스크랩 표시
     st.markdown("### 📰 뉴스 스크랩")
     try:
-        news_path = os.path.join("hg_pub_affairs", "data", "pub_affair_articles.csv")
-        if os.path.exists(news_path):
-            news_df = pd.read_csv(news_path, encoding="utf-8-sig")
+        # GitHub Raw URL (현재 브랜치가 main이고 공개 repo인 경우)
+        github_raw_csv_url = "https://raw.githubusercontent.com/bigleeth/hg_pub_affairs/main/data/pub_affair_articles.csv"
+        
+        news_df = pd.read_csv(github_raw_csv_url, encoding="utf-8-sig")
 
-            # 날짜 형식 정리 및 정렬
-            news_df["Publication Date"] = pd.to_datetime(news_df["Publication Date"], errors="coerce")
-            news_df = news_df.sort_values("Publication Date", ascending=False)
+        # 날짜 정리 및 정렬
+        news_df["Publication Date"] = pd.to_datetime(news_df["Publication Date"], errors="coerce")
+        news_df = news_df.sort_values("Publication Date", ascending=False)
 
-            # 전체 기사 표시, 높이 1000px
-            st.dataframe(
-                news_df,
-                use_container_width=True,
-                hide_index=True,
-                height=1000,
-                column_config={
-                    "Keyword": st.column_config.TextColumn("키워드"),
-                    "Title": st.column_config.TextColumn("제목"),
-                    "Description": st.column_config.TextColumn("내용 요약"),
-                    "Original Link": st.column_config.LinkColumn("원문 링크"),
-                    "Link": st.column_config.LinkColumn("네이버 링크"),
-                    "Publication Date": st.column_config.DatetimeColumn("기사 일자"),
-                }
-            )
-        else:
-            st.warning("📂 뉴스 스크랩 파일(pub_affair_articles.csv)이 존재하지 않습니다.")
+        # 전체 기사 표시, 높이 1000px
+        st.dataframe(
+            news_df,
+            use_container_width=True,
+            hide_index=True,
+            height=1000,
+            column_config={
+                "Keyword": st.column_config.TextColumn("키워드"),
+                "Title": st.column_config.TextColumn("제목"),
+                "Description": st.column_config.TextColumn("내용 요약"),
+                "Original Link": st.column_config.LinkColumn("원문 링크"),
+                "Link": st.column_config.LinkColumn("네이버 링크"),
+                "Publication Date": st.column_config.DatetimeColumn("기사 일자"),
+            }
+        )
     except Exception as e:
-        st.error("뉴스 스크랩 데이터를 불러오는 중 오류가 발생했습니다.")
+        st.error("❌ 뉴스 스크랩 데이터를 불러오는 중 오류가 발생했습니다.")
         st.exception(e)
-
-
     
     # 알리오 공시정보
     st.markdown("""
