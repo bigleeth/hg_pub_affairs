@@ -2,7 +2,9 @@ name: Daily News Scraper
 
 on:
   schedule:
-    - cron: '30 9 * * *'  # Run daily at 18:30 KST (which is 9:30 UTC)
+    - cron: '30 21 * * *'  # Run daily at 06:30 KST
+    - cron: '30 4 * * *'   # Run daily at 13:30 KST
+    - cron: '30 7 * * *'   # Run daily at 16:30 KST
   workflow_dispatch:
 
 jobs:
