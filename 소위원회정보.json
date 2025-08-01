@@ -59,7 +59,7 @@
         }
     },
     "메타데이터": {
-        "수집일시": "2025-08-01 07:30:26",
+        "수집일시": "2025-08-02 07:30:01",
         "url": "https://finance.na.go.kr:444/cmmit/mem/cmmitMemList/subCmt.do?menuNo=2000014",
         "status_code": 200
     }
