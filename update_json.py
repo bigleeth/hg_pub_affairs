@@ -33,10 +33,9 @@ members = [
     ("안도걸", "AHNDOGEOL"),
     ("오기형", "OHGIHYOUNG"),
     ("윤호중", "YUNHOJUNG"),
-    ("임광현", "LIMKWANGHYUN"),
     ("정성호", "JUNGSUNGHO"),
     ("정일영", "CHUNGILYOUNG"),
-    ("조승래", "JOSEOUNGLAE"),
+    ("박민규", "PARKMINKYU"),
     ("진성준", "JINSUNGJOON"),
     ("송언석", "SONGEONSEOG"),
     ("박수영", "PARKSOOYOUNG"),
@@ -72,7 +71,7 @@ party_mapping = {
     "안도걸": "더불어민주당",
     "오기형": "더불어민주당",
     "윤호중": "더불어민주당",
-    "임광현": "더불어민주당",
+    "박민규": "더불어민주당",
     "정성호": "더불어민주당",
     "정일영": "더불어민주당",
     "진성준": "더불어민주당",
@@ -370,3 +369,4 @@ final_result = {
 with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 print("✅ 소위원회 정보 저장 완료")
+
