@@ -20,43 +20,34 @@ headers_members = {
     'Connection': 'keep-alive'
 }
 members = [
-        ("김영진", "KIMYOUNGJIN"),
+    ("김영진", "KIMYOUNGJIN"),
     ("정태호", "JUNGTAEHO"),
-    ("김상훈", "KIMSANGHOON"),
-    ("윤한홍", "YOONHANHONG"),
-    ("조승래", "JOSEOUNGLAE"),
     ("김영환", "KIMYOUNGWHAN"),
     ("김태년", "KIMTAENYEON"),
     ("박홍근", "PARKHONGKEUN"),
-    ("신영대", "SHINYEONGDAE"),
+    ("박민규", "PARKMINKYU"),
     ("안규백", "AHNGYUBACK"),
     ("안도걸", "AHNDOGEOL"),
     ("오기형", "OHGIHYOUNG"),
-    ("윤호중", "YUNHOJUNG"),
+    ("이소영", "LEESOYOUNG"),
     ("정성호", "JUNGSUNGHO"),
     ("정일영", "CHUNGILYOUNG"),
-    ("박민규", "PARKMINKYU"),
+    ("조승래", "JOSEOUNGLAE"),
     ("진성준", "JINSUNGJOON"),
     ("송언석", "SONGEONSEOG"),
     ("박수영", "PARKSOOYOUNG"),
-    ("구자근", "KUJAKEUN"),
     ("박대출", "PARKDAECHUL"),
     ("박성훈", "PARKSUNGHOON"),
-    ("이소영", "LEESOYOUNG"),
+    ("유상범", "YOOSANGBUM"),
+    ("윤영석", "YOONYOUNGSEOK"),
     ("이인선", "LEEINSEON"),
-    ("이종욱", "LEEJONHWOOK"),
     ("임이자", "LIMLEEJA"),
     ("최은석", "CHOIEUNSEOK"),
     ("차규근", "CHAGYUGEUN"),
     ("천하람", "CHUNHARAM"),
-    ("황명선", "HWANGMYEONGSEON"),
     ("최기상", "CHOIKISANG"),
-    ("유동수", "YOODONGSOO"),
-    ("이은주", "LEEUNJU"),
-    ("박수민", "PARKSOOMIN"),
-    ("이만희", "LEEMANHEE"),
     ("권영세", "KWONYOUNGSE"),
-    ("윤영석", "YOONYOUNGSEOK")
+
 ]
 
 # 정당 정보 매핑
@@ -66,41 +57,32 @@ party_mapping = {
     "김영환": "더불어민주당",
     "김태년": "더불어민주당",
     "박홍근": "더불어민주당",
-    "신영대": "더불어민주당",
+    "박민규": "더불어민주당",
     "안규백": "더불어민주당",
     "안도걸": "더불어민주당",
     "오기형": "더불어민주당",
-    "윤호중": "더불어민주당",
-    "박민규": "더불어민주당",
+    "이소영": "더불어민주당",
     "정성호": "더불어민주당",
     "정일영": "더불어민주당",
-    "진성준": "더불어민주당",
-    "황명선": "더불어민주당",
-    "최기상": "더불어민주당",
-    "이언주": "더불어민주당",
-    "유동수": "더불어민주당",
     "조승래": "더불어민주당",
-    "이소영": "더불어민주당",
-    "김상훈": "국민의힘",
-    "윤한홍": "국민의힘",
+    "진성준": "더불어민주당",
+    "최기상": "더불어민주당",
     "송언석": "국민의힘",
     "박수영": "국민의힘",
-    "구자근": "국민의힘",
     "박대출": "국민의힘",
     "박성훈": "국민의힘",
-    "박수민": "국민의힘",
+    "유상범": "국민의힘",
+    "윤영석": "국민의힘",
     "이인선": "국민의힘",
-    "이종욱": "국민의힘",
+    "임이자": "국민의힘",
     "최은석": "국민의힘",
     "권영세": "국민의힘",
-    "윤영석": "국민의힘",
-    "이만희": "국민의힘",
-    "유상범": "국민의힘",
-    "임이자": "국민의힘",
     "차규근": "조국혁신당",
     "천하람": "개혁신당"
-    # ... Add all
 }
+
+
+
 
 def extract_member_data(soup, name, member_id, response):
     try:
@@ -369,5 +351,6 @@ final_result = {
 with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 print("✅ 소위원회 정보 저장 완료")
+
 
 
