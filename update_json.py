@@ -161,52 +161,103 @@ with open('assembly_member_data.json', 'w', encoding='utf-8') as f:
 print("✅ 국회의원 정보 저장 완료")
 
 
-### =============== 의안 정보 수집 ===============
-def collect_bill_info(bill_name):
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Origin': 'https://likms.assembly.go.kr',
-        'Referer': 'https://likms.assembly.go.kr/bill/main.do',
-        'User-Agent': 'Mozilla/5.0'
-    }
-    data = {
-        'tabMenuType': 'billSimpleSearch',
-        'hjNm': '', 'ageFrom': '22', 'ageTo': '22',
-        'billKind': '전체', 'billName': bill_name
-    }
-    response = requests.post('https://likms.assembly.go.kr/bill/BillSearchResult.do', headers=headers, data=data)
-    soup = BeautifulSoup(response.text, 'html.parser')
+# ### =============== 의안 정보 수집 ===============
+import json
+import re
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+SEARCH_URL = "https://likms.assembly.go.kr/bill/bi/bill/sch/detailedSchPage.do"
+
+def collect_bill_info(bill_name: str):
+    """
+    새 의안정보시스템(리뉴얼) 기준:
+    - XHR/JSON이 아니라, detailedSchPage.do에서 '완성된 HTML 목록'이 내려옴
+    - 결과 행: tr.mono
+    - billId: a[onclick]의 fGoDetail('billId', ...)에서 추출
+    - 화이트리스트 정책: 의안명이 bill_name과 정확히 일치하는 것만 저장
+    """
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0",
+        "Referer": SEARCH_URL,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "ko-KR,ko;q=0.9",
+    })
+
+    # 🔥 핵심: 검색어는 query param billName
+    params = {"billName": bill_name}
+
+    r = session.get(SEARCH_URL, params=params, timeout=30)
+    r.raise_for_status()
+
+    soup = BeautifulSoup(r.text, "html.parser")
+
     bills = []
-    table = soup.find('table', {'summary': '검색결과의 의안번호, 의안명, 제안자구분, 제안일자, 의결일자, 의결결과, 주요내용, 심사진행상태 정보'})
-    if table:
-        rows = table.find_all('tr')[1:]
-        for row in rows:
-            cols = row.find_all('td')
-            if len(cols) >= 8:
-                bill_a_tag = cols[1].find('a')
-                bill_id = bill_a_tag.get('onclick', '').split("'")[1] if bill_a_tag and 'onclick' in bill_a_tag.attrs else ''
+    rows = soup.select("tr.mono")
 
-                content_a_tag = cols[6].find('a')
-                content_id = content_a_tag.get('onclick', '').split("'")[1] if content_a_tag and 'onclick' in content_a_tag.attrs else ''
+    for row in rows:
+        tds = row.find_all("td")
+        if len(tds) < 2:
+            continue
 
-                bills.append({
-                    '의안번호': cols[0].text.strip(),
-                    '의안명': {
-                        'text': cols[1].text.strip(),
-                        'link': f"javascript:fGoDetail('{bill_id}', 'billSimpleSearch')" if bill_id else ''
-                    },
-                    '제안자구분': cols[2].text.strip(),
-                    '제안일자': cols[3].text.strip(),
-                    '의결일자': cols[4].text.strip(),
-                    '의결결과': cols[5].text.strip(),
-                    '주요내용': {
-                        'text': '주요내용 보기',
-                        'link': f"javascript:ajaxShowListSummaryLayerPopup('{content_id}')" if content_id else ''
-                    },
-                    '심사진행상태': cols[7].text.strip(),
-                    "수집일시": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S")
-                })
+        # 0) 의안번호 (title 속성에 들어있는 경우가 많음)
+        bill_no = (tds[0].get("title") or tds[0].get_text(strip=True) or "").strip()
+
+        # 1) 의안명 + billId
+        title_td = tds[1]
+        bill_title = title_td.get_text(" ", strip=True)
+
+        # ✅ 화이트리스트 필터: 정확히 이 법률명만 저장
+        if bill_title != bill_name:
+            continue
+
+        bill_id = ""
+        a = title_td.find("a")
+        if a and a.has_attr("onclick"):
+            m = re.search(r"fGoDetail\('([^']+)'", a["onclick"])
+            if m:
+                bill_id = m.group(1)
+
+        # 2) 제안자구분/제안일자/심사진행상태 등은 화면 구성에 따라 td 위치가 변할 수 있어
+        #    안정적으로는 정규식/키워드 기반으로 일부만 추출
+        full_text = row.get_text(" ", strip=True)
+
+        propose_date = ""
+        m_date = re.search(r"\b(20\d{2}-\d{2}-\d{2})\b", full_text)
+        if m_date:
+            propose_date = m_date.group(1)
+
+        # 심사진행상태: 대표 키워드만 우선 매칭 (필요 시 추가 가능)
+        status = ""
+        for kw in ["소관위접수", "소관위심사", "본회의부의안건", "공포", "대안반영폐기", "원안가결", "폐기", "접수"]:
+            if kw in full_text:
+                status = kw
+                break
+
+        bills.append({
+            "의안번호": bill_no,
+            "의안ID": bill_id,  # ✅ 추가(권장): update_json 중복제거/상세링크용
+            "의안명": {
+                "text": bill_title,
+                "link": f"javascript:fGoDetail('{bill_id}', 'billSimpleSearch')" if bill_id else ""
+            },
+            "제안자구분": "",        # 새 UI에서 고정 컬럼이 아닐 수 있어 우선 빈값 유지
+            "제안일자": propose_date, # 가능한 경우만 채움
+            "의결일자": "",
+            "의결결과": "",
+            "주요내용": {            # 새 UI에서 popup 방식이 달라졌을 가능성 높아 우선 빈 링크
+                "text": "주요내용 보기",
+                "link": ""
+            },
+            "심사진행상태": status,
+            "수집일시": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S"),
+        })
+
     return bills
+
 
 bill_names = [
     "한국수출입은행법 일부개정법률안",
@@ -214,22 +265,31 @@ bill_names = [
     "첨단조선업의 경쟁력 강화 및 지원에 관한 특별법안",
     "공공기관의 운영에 관한 법률 일부개정법률안",
     "한국산업은행법 일부개정법률안",
-    "2025년도에 발행하는 첨단전략산업기금채권에 대한 국가보증동의안",
+    "한미 전략적 투자 관리를 위한 특별법안",
     "중소기업은행법 일부개정법률안",
     "정부조직법 일부개정법률안",
     "신용보증기금법 일부개정법률안",
     "동남권산업투자공사 설립 및 운영에 관한 법률안",
     "충청권산업투자공사 설립 및 운영에 관한 법률안",
-    "기후위기 대응을 위한 탄소중립ㆍ녹색성장 기본법 일부개정법률안"    
+    "기후위기 대응을 위한 탄소중립ㆍ녹색성장 기본법 일부개정법률안"
 ]
 
 all_bills = []
 for bill_name in bill_names:
-    all_bills.extend(collect_bill_info(bill_name))
+    try:
+        rows = collect_bill_info(bill_name)
+        # ✅ 혹시 같은 법률명이 중복으로 들어오면(거의 없지만) 중복 제거
+        #    (의안ID가 있으면 그 기준으로 제거)
+        all_bills.extend(rows)
+        print(f"✅ [{bill_name}] {len(rows)}건 수집")
+    except Exception as e:
+        print(f"⚠️ [{bill_name}] 수집 실패: {e}")
 
-with open('의안정보검색결과.json', 'w', encoding='utf-8') as f:
+with open("의안정보검색결과.json", "w", encoding="utf-8") as f:
     json.dump(all_bills, f, ensure_ascii=False, indent=4)
-print("✅ 의안 정보 저장 완료")
+
+print(f"✅ 의안 정보 저장 완료: {len(all_bills)}건")
+
 
 ### =============== 소위원회 정보 수집 ===============
 # 세션 객체 생성
@@ -351,6 +411,7 @@ final_result = {
 with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 print("✅ 소위원회 정보 저장 완료")
+
 
 
 
