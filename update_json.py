@@ -161,7 +161,7 @@ with open('assembly_member_data.json', 'w', encoding='utf-8') as f:
 print("✅ 국회의원 정보 저장 완료")
 
 
-# ### =============== 의안 정보 수집 ===============
+# ### =============== 의안 정보 수집 (리뉴얼 XHR 방식) ===============
 import json
 import re
 import unicodedata
@@ -170,147 +170,264 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-SEARCH_URL = "https://likms.assembly.go.kr/bill/bi/bill/sch/detailedSchPage.do"
+BASE = "https://likms.assembly.go.kr"
+PAGE_URL = f"{BASE}/bill/bi/bill/sch/detailedSchPage.do"
+API_URL  = f"{BASE}/bill/bi/bill/sch/findSchPaging.do"
 
-def normalize_bill_title(title: str) -> str:
-    """
-    - NFKC 정규화 (특수 공백/문자 변형 방지)
-    - 괄호 이후 제거: "법률안(○○의원 등)" -> "법률안"
-    - 양끝 공백 제거
-    """
-    if not title:
+def normalize_title(s: str) -> str:
+    """괄호 앞 제목 기준으로 정확 매칭하기 위한 정규화"""
+    if not s:
         return ""
-    t = unicodedata.normalize("NFKC", title).strip()
-    t = re.split(r"\s*\(", t, maxsplit=1)[0].strip()
-    return t
+    s = unicodedata.normalize("NFKC", s).strip()
+    s = re.split(r"\s*\(", s, maxsplit=1)[0].strip()
+    return s
 
-def collect_bill_info(bill_name: str):
-    # 1. URL을 기존에 사용하던 '상세검색' 페이지로 복구 (이게 맞는 주소입니다)
-    URL = "https://likms.assembly.go.kr/bill/bi/bill/sch/detailedSchPage.do"
-    
-    session = requests.Session()
-    session.headers.update({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Referer": URL,
-    })
+def extract_csrf_token(html: str) -> str:
+    """
+    페이지 HTML에서 CSRF 토큰을 찾아 반환
+    (사이트 구현에 따라 meta / script / input hidden 등에 있을 수 있어 다중 시도)
+    """
+    soup = BeautifulSoup(html, "html.parser")
 
-    # 2. 파라미터에 '대수(ageFrom)'를 추가하여 22대 국회로 한정 (정확도 향상)
-    params = {
-        "billName": bill_name,
-        "ageFrom": "22",  # 22대 국회
-        "ageTo": "22",    # 22대 국회
-        "searchGubun": "1" # 의안명 검색
-    }
+    # 1) meta
+    meta = soup.find("meta", {"name": re.compile("csrf", re.I)})
+    if meta and meta.get("content"):
+        return meta["content"].strip()
 
+    # 2) hidden input
+    inp = soup.find("input", {"name": re.compile("csrf", re.I)})
+    if inp and inp.get("value"):
+        return inp["value"].strip()
+
+    # 3) script 문자열에서 UUID 토큰 탐색(사용자 curl 형태: UUID)
+    m = re.search(r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", html, re.I)
+    if m:
+        return m.group(1)
+
+    return ""
+
+def parse_findSch_response(resp: requests.Response):
+    """
+    findSchPaging.do 응답이 JSON/HTML 둘 다 가능하다고 보고 처리
+    반환: list[dict]
+    """
+    ctype = (resp.headers.get("Content-Type") or "").lower()
+
+    # JSON이면 우선 json() 시도
+    if "json" in ctype:
+        try:
+            return resp.json()
+        except Exception:
+            pass
+
+    # JSON 아닌데도 body가 JSON일 수 있음
     try:
-        r = session.get(URL, params=params, timeout=30)
-        r.raise_for_status()
-    except Exception as e:
-        print(f"⚠️ [요청 실패] {bill_name}: {e}")
-        return []
+        return resp.json()
+    except Exception:
+        pass
 
-    soup = BeautifulSoup(r.text, "html.parser")
+    # HTML 조각일 가능성: table row/td 파싱
+    html = resp.text
+    soup = BeautifulSoup(html, "html.parser")
 
-    # 3. 상세검색 페이지의 테이블 행 선택자 (tr.mono 사용)
-    # 만약 tr.mono가 안 먹힐 경우를 대비해 tbody 안의 모든 tr을 가져옴
-    rows = soup.select("div.tableDisplay01 > table > tbody > tr")
+    # 흔한 케이스: tr.mono 또는 tbody tr
+    rows = soup.select("tr.mono")
     if not rows:
-        rows = soup.select("tr.mono") # 기존 선택자 백업 사용
+        rows = soup.select("tbody tr")
 
-    if not rows:
-        print(f"ℹ️ [{bill_name}] 검색 결과(행)가 없습니다. (URL 접속은 성공)")
-        return []
-
-    # 검색 결과 없음 메시지 체크
-    if len(rows) == 1 and ("자료가 없습니다" in rows[0].get_text() or "검색된 자료가" in rows[0].get_text()):
-        print(f"ℹ️ [{bill_name}] 해당 키워드에 대한 의안 데이터가 없습니다.")
-        return []
-
-    target = normalize_bill_title(bill_name)
-    print(f"🔍 [{bill_name}] 검색 성공 (발견: {len(rows)}건)")
-
-    bills = []
-    
-    for row in rows:
-        tds = row.find_all("td")
-        if len(tds) < 4:
+    parsed = []
+    for tr in rows:
+        tds = tr.find_all("td")
+        if len(tds) < 2:
             continue
 
-        # 데이터 추출 (상세검색 페이지 구조 기준)
-        # 번호 | 의안명 | 제안자 | 제안일자 | 의결결과 | 심사진행상태
-        
-        # 1. 의안번호
-        bill_no = tds[0].get_text(strip=True)
-
-        # 2. 의안명 & ID
+        bill_no = (tds[0].get("title") or tds[0].get_text(strip=True) or "").strip()
         title_td = tds[1]
-        bill_title_full = title_td.get_text(" ", strip=True)
-        
+        title_full = title_td.get_text(" ", strip=True)
+
         bill_id = ""
         a = title_td.find("a")
-        if a and a.has_attr("onclick"):
-            # fGoDetail('PRC_...', 'detailedSchPage') 패턴 추출
-            m = re.search(r"fGoDetail\(['\"]([^'\"]+)['\"]", a["onclick"])
+        if a:
+            raw = (a.get("onclick", "") or "") + " " + (a.get("href", "") or "")
+            m = re.search(r"fGoDetail\('([^']+)'", raw)
             if m:
                 bill_id = m.group(1)
 
-        # 3. 제안자
-        proposer = tds[2].get_text(strip=True)
-        
-        # 4. 제안일자
-        propose_date = tds[3].get_text(strip=True)
-        
-        # 5. 심사진행상태 (보통 6번째 혹은 마지막 컬럼)
-        status = tds[-1].get_text(strip=True)
+        proposer = tds[2].get_text(strip=True) if len(tds) > 2 else ""
+        propose_date = tds[3].get_text(strip=True) if len(tds) > 3 else ""
+        status = tds[4].get_text(strip=True) if len(tds) > 4 else ""
 
-        # ==========================================================
-        # 🔴 [핵심 수정] 필터 완화 로직
-        # 제목에 검색어가 '포함'되어 있으면 수집 (공백 제거 후 비교)
-        # ==========================================================
-        clean_target = bill_name.replace(" ", "")
-        clean_title = bill_title_full.replace(" ", "")
-        
-        if clean_target not in clean_title:
-             # 너무 다른 제목은 건너뛰기
-             # print(f"   [Skip] 제목 불일치: {bill_title_full}")
-             continue
-
-        print(f"   ✅ 수집 성공: {bill_title_full}")
-
-        bills.append({
-            "의안번호": bill_no,
-            "의안ID": bill_id,
-            "의안명": {
-                "text": bill_title_full,
-                "link": f"https://likms.assembly.go.kr/bill/bi/bill/detail.do?billId={bill_id}" if bill_id else ""
-            },
-            "제안자": proposer,
-            "제안일자": propose_date,
-            "심사진행상태": status,
-            "수집일시": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S"),
+        parsed.append({
+            "bill_no": bill_no,
+            "bill_id": bill_id,
+            "bill_title": title_full,
+            "proposer": proposer,
+            "propose_date": propose_date,
+            "status": status,
         })
 
-    return bills
+    return parsed
 
-def dump_debug(keyword: str, html: str):
-    # Actions 로그에 핵심만 찍기
-    print(f"--- DEBUG HTML HEAD ({keyword}) ---")
-    print(html[:1500])  # 앞부분
-    print("... (snip) ...")
-    print(html[-1500:]) # 뒷부분
+def collect_bill_info_xhr(bill_name_exact: str, query: str = None, age="22", rows=50):
+    """
+    - bill_name_exact: 최종 저장 대상(화이트리스트)
+    - query: 검색어(없으면 bill_name_exact 일부를 사용)
+    """
+    target = normalize_title(bill_name_exact)
+    if not query:
+        query = target  # 기본은 정확 제목으로 검색
 
-    # HTML 안에 숨겨진 API 힌트(ajax url) 찾기
-    for pat in ["findSch", "paging", "ajax", "search", "resultList", "X-Requested-With"]:
-        if pat.lower() in html.lower():
-            print(f"🔎 hint contains: {pat}")
+    s = requests.Session()
+    s.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept-Language": "ko-KR,ko;q=0.9",
+        "Referer": PAGE_URL,
+        "Origin": BASE,
+    })
 
-if not rows:
-    print(f"ℹ️ [{keyword}] 검색 결과(행)가 없습니다. (URL 접속은 성공)")
-    dump_debug(keyword, r.text)
-    return []
+    # 1) 상세검색 페이지 GET -> 세션쿠키 + CSRF 토큰 확보
+    r0 = s.get(PAGE_URL, timeout=30)
+    r0.raise_for_status()
+    csrf = extract_csrf_token(r0.text)
+
+    # CSRF가 없더라도 서버가 허용하는 케이스가 있어 일단 진행하되, 헤더는 조건부로
+    headers = {
+        "Accept": "application/json, text/plain, */*",
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "X-Requested-With": "XMLHttpRequest",
+        "Referer": PAGE_URL,
+        "Origin": BASE,
+    }
+    if csrf:
+        headers["X-CSRF-TOKEN"] = csrf
+
+    # 2) curl 기반 payload 구성(필수 필드 위주)
+    data = {
+        "reqPageId": "billSrch",
+        "detailedTab": "billDtl",
+        "billNm": query,          # ✅ 검색어
+        "representKindCd": "대표발의",
+        "isPopSelect": "N",
+        "ageCmtId": "전체",
+        "ageFrom": age,
+        "ageTo": age,
+        "billKind": "전체",
+        "proposerKind": "전체",
+        "procGbnCd": "전체",
+        "jntPrpslYn": "전체",
+        "cmtResultCd": "전체",
+        "mainResultCd": "전체",
+        "mainUpdateYn": "전체",
+        "expAddiYn": "전체",
+        "budgetSubbillCd": "전체",
+        "reexamYn": "전체",
+        "lawStatus": "전체",
+        "page": "1",
+        "rows": str(rows),
+        "schSorting": "score",
+        "ordCd": "DESC",
+    }
+
+    r = s.post(API_URL, headers=headers, data=data, timeout=30)
+    r.raise_for_status()
+
+    raw_items = parse_findSch_response(r)
+
+    # 3) raw_items 형태가 다양할 수 있어 “제목 후보 키”를 여러 개로 탐색
+    out = []
+    now = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S")
+
+    def pick_title(obj: dict) -> str:
+        # JSON 구조가 바뀔 수 있어 후보 키들로 탐색
+        for k in ["billNm", "billName", "title", "BILL_NM", "bill_title"]:
+            v = obj.get(k)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        return ""
+
+    def pick_bill_id(obj: dict) -> str:
+        for k in ["billId", "BILL_ID", "bill_id"]:
+            v = obj.get(k)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        return ""
+
+    def pick_bill_no(obj: dict) -> str:
+        for k in ["billNo", "BILL_NO", "bill_no"]:
+            v = obj.get(k)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        return ""
+
+    def pick_proposer(obj: dict) -> str:
+        for k in ["proposerKindNm", "proposer", "proposerNm", "PROPOSER", "proposer_kind"]:
+            v = obj.get(k)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        return ""
+
+    def pick_date(obj: dict) -> str:
+        for k in ["propseDt", "proposeDt", "propose_date", "PROPSE_DT"]:
+            v = obj.get(k)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        return ""
+
+    def pick_status(obj: dict) -> str:
+        for k in ["procSttsNm", "status", "PROC_STTS_NM"]:
+            v = obj.get(k)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        return ""
+
+    # raw_items가 dict일 수도 있음(resultList 등)
+    items = []
+    if isinstance(raw_items, dict):
+        # 흔한 키 후보들
+        for k in ["resultList", "rows", "list", "data"]:
+            v = raw_items.get(k)
+            if isinstance(v, list):
+                items = v
+                break
+    elif isinstance(raw_items, list):
+        items = raw_items
+
+    for obj in items:
+        if not isinstance(obj, dict):
+            continue
+
+        title_full = pick_title(obj)
+        if normalize_title(title_full) != target:
+            continue
+
+        bill_id = pick_bill_id(obj)
+        bill_no = pick_bill_no(obj)
+        proposer = pick_proposer(obj)
+        propose_date = pick_date(obj)
+        status = pick_status(obj)
+
+        out.append({
+            "의안번호": bill_no,
+            "의안ID": bill_id,
+            "의안명": {"text": title_full, "link": f"javascript:fGoDetail('{bill_id}', 'billSimpleSearch')" if bill_id else ""},
+            "제안자구분": proposer,
+            "제안일자": propose_date,
+            "의결일자": "",
+            "의결결과": "",
+            "주요내용": {"text": "주요내용 보기", "link": ""},
+            "심사진행상태": status,
+            "상세URL": f"{BASE}/bill/bi/bill/detail.do?billId={bill_id}" if bill_id else "",
+            "수집일시": now,
+        })
+
+    # 디버그용(0건이면 응답 일부 출력)
+    if not out:
+        print(f"ℹ️ [{bill_name_exact}] 0건(화이트리스트 불일치 가능). 응답 일부: {r.text[:500]}")
+
+    return out
 
 
-# ✅ 이 법률들만 저장(사용자 요구 반영)
+# ✅ 이 법률들만 저장
 bill_names = [
     "한국수출입은행법 일부개정법률안",
     "경제안보를 위한 공급망 안정화 지원 기본법 일부개정법률안",
@@ -323,20 +440,23 @@ bill_names = [
     "신용보증기금법 일부개정법률안",
     "동남권산업투자공사 설립 및 운영에 관한 법률안",
     "충청권산업투자공사 설립 및 운영에 관한 법률안",
-    "기후위기 대응을 위한 탄소중립ㆍ녹색성장 기본법 일부개정법률안"
+    "기후위기 대응을 위한 탄소중립ㆍ녹색성장 기본법 일부개정법률안",
 ]
 
 all_bills = []
 for name in bill_names:
     try:
-        rows = collect_bill_info(name)
-        all_bills.extend(rows)
+        # 검색어는 너무 길면 매칭 점수/검색로직이 달라질 수 있어
+        # “핵심 키워드”로 query를 따로 줄 수도 있음.
+        # 우선은 정확 제목으로 검색:
+        rows = collect_bill_info_xhr(bill_name_exact=name, query=name, age="22", rows=50)
         print(f"✅ [{name}] {len(rows)}건 수집")
+        all_bills.extend(rows)
     except Exception as e:
-        print(f"⚠️ [{name}] 수집 실패: {e}")
+        print(f"⚠️ [요청 실패] {name}: {type(e).__name__} - {e}")
 
 with open("의안정보검색결과.json", "w", encoding="utf-8") as f:
-    json.dump(all_bills, f, ensure_ascii=False, indent=4)
+    json.dump(all_bills, f, ensure_ascii=False, indent=2)
 
 print(f"✅ 의안 정보 저장 완료: {len(all_bills)}건")
 
@@ -461,6 +581,7 @@ final_result = {
 with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 print("✅ 소위원회 정보 저장 완료")
+
 
 
 
