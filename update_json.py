@@ -185,22 +185,21 @@ def normalize_bill_title(title: str) -> str:
     return t
 
 def collect_bill_info(bill_name: str):
-    # 상세검색(.detailedSchPage) 대신 간편검색(.billSimpleSearch) 사용
-    # 간편검색이 키워드 매칭(GET방식)에 훨씬 안정적입니다.
-    URL = "https://likms.assembly.go.kr/bill/bi/bill/sch/billSimpleSearch.do"
+    # 1. URL을 기존에 사용하던 '상세검색' 페이지로 복구 (이게 맞는 주소입니다)
+    URL = "https://likms.assembly.go.kr/bill/bi/bill/sch/detailedSchPage.do"
     
     session = requests.Session()
     session.headers.update({
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Referer": URL,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "ko-KR,ko;q=0.9",
     })
 
-    # 간편 검색 파라미터: searchStr
+    # 2. 파라미터에 '대수(ageFrom)'를 추가하여 22대 국회로 한정 (정확도 향상)
     params = {
-        "searchStr": bill_name,
-        "searchGubun": "1"  # 1: 의안명 검색
+        "billName": bill_name,
+        "ageFrom": "22",  # 22대 국회
+        "ageTo": "22",    # 22대 국회
+        "searchGubun": "1" # 의안명 검색
     }
 
     try:
@@ -212,60 +211,69 @@ def collect_bill_info(bill_name: str):
 
     soup = BeautifulSoup(r.text, "html.parser")
 
-    # 간편검색 결과 테이블의 행 선택자 (tableDisplay01 클래스 내부의 tbody tr)
+    # 3. 상세검색 페이지의 테이블 행 선택자 (tr.mono 사용)
+    # 만약 tr.mono가 안 먹힐 경우를 대비해 tbody 안의 모든 tr을 가져옴
     rows = soup.select("div.tableDisplay01 > table > tbody > tr")
-
-    # 검색 결과 없음 처리
     if not rows:
-        print(f"ℹ️ [{bill_name}] 검색 결과가 없습니다.")
+        rows = soup.select("tr.mono") # 기존 선택자 백업 사용
+
+    if not rows:
+        print(f"ℹ️ [{bill_name}] 검색 결과(행)가 없습니다. (URL 접속은 성공)")
         return []
-        
-    # '검색된 자료가 없습니다' 텍스트가 있는 행이 나오면 빈 리스트 반환
-    if len(rows) == 1 and "자료가 없습니다" in rows[0].get_text():
-        print(f"ℹ️ [{bill_name}] 검색 결과가 없습니다 (사이트 응답).")
+
+    # 검색 결과 없음 메시지 체크
+    if len(rows) == 1 and ("자료가 없습니다" in rows[0].get_text() or "검색된 자료가" in rows[0].get_text()):
+        print(f"ℹ️ [{bill_name}] 해당 키워드에 대한 의안 데이터가 없습니다.")
         return []
 
     target = normalize_bill_title(bill_name)
-    print(f"🔍 [{bill_name}] 검색 완료 (발견: {len(rows)}건)")
+    print(f"🔍 [{bill_name}] 검색 성공 (발견: {len(rows)}건)")
 
     bills = []
     
     for row in rows:
         tds = row.find_all("td")
-        # 간편검색 결과 테이블 컬럼 개수 확인 (보통 6~7개)
-        if len(tds) < 5:
+        if len(tds) < 4:
             continue
 
-        # 의안번호 (1번째 컬럼)
+        # 데이터 추출 (상세검색 페이지 구조 기준)
+        # 번호 | 의안명 | 제안자 | 제안일자 | 의결결과 | 심사진행상태
+        
+        # 1. 의안번호
         bill_no = tds[0].get_text(strip=True)
 
-        # 의안명 (2번째 컬럼)
+        # 2. 의안명 & ID
         title_td = tds[1]
         bill_title_full = title_td.get_text(" ", strip=True)
         
-        # billId 추출 (onclick 이벤트 파싱)
         bill_id = ""
         a = title_td.find("a")
         if a and a.has_attr("onclick"):
-            # 예: fGoDetail('PRC_A1B2...', 'billSimpleSearch')
+            # fGoDetail('PRC_...', 'detailedSchPage') 패턴 추출
             m = re.search(r"fGoDetail\(['\"]([^'\"]+)['\"]", a["onclick"])
             if m:
                 bill_id = m.group(1)
 
-        # 제안자 (3번째 컬럼)
+        # 3. 제안자
         proposer = tds[2].get_text(strip=True)
         
-        # 제안일자 (4번째 컬럼)
+        # 4. 제안일자
         propose_date = tds[3].get_text(strip=True)
         
-        # 심사진행상태 (6번째 컬럼) - 테이블 구조에 따라 인덱스 확인 필요
-        # 보통: 번호 | 의안명 | 제안자 | 제안일자 | 의결일자 | 의결결과 | 심사진행상태
-        # 따라서 tds[6]일 가능성이 높으나, 안전하게 맨 뒤에서 가져오거나 텍스트 매칭
-        status = tds[-1].get_text(strip=True) 
+        # 5. 심사진행상태 (보통 6번째 혹은 마지막 컬럼)
+        status = tds[-1].get_text(strip=True)
 
-        # 필터링: 검색어가 제목에 포함되는지 확인
-        if bill_name.replace(" ", "") not in bill_title_full.replace(" ", ""):
-            continue
+        # ==========================================================
+        # 🔴 [핵심 수정] 필터 완화 로직
+        # 제목에 검색어가 '포함'되어 있으면 수집 (공백 제거 후 비교)
+        # ==========================================================
+        clean_target = bill_name.replace(" ", "")
+        clean_title = bill_title_full.replace(" ", "")
+        
+        if clean_target not in clean_title:
+             # 너무 다른 제목은 건너뛰기
+             # print(f"   [Skip] 제목 불일치: {bill_title_full}")
+             continue
 
         print(f"   ✅ 수집 성공: {bill_title_full}")
 
@@ -436,6 +444,7 @@ final_result = {
 with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 print("✅ 소위원회 정보 저장 완료")
+
 
 
 
