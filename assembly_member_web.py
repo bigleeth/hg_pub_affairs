@@ -392,17 +392,15 @@ def main():
     
 # 법률안 발의내역 표시
 st.markdown("### 📜 법률안 발의내역")
+
 try:
     with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
         bill_data = json.load(f)
 
     if not bill_data:
-        st.info("의안정보검색결과.json 파일이 비어있습니다. (수집 스크립트가 0건 저장했는지 확인)")
+        st.info("의안정보검색결과.json 파일이 비어있습니다.")
     else:
         def safe_bill_title(bill):
-            # ✅ 의안명 스키마 혼용 대응:
-            # - {"의안명": {"text": "...", "link": "..."}}
-            # - {"의안명": "..."}
             v = bill.get("의안명", "")
             if isinstance(v, dict):
                 return v.get("text", "")
@@ -416,11 +414,9 @@ try:
 
         rows = []
         for bill in bill_data:
-            title = safe_bill_title(bill)
             rows.append({
                 "의안번호": safe_field(bill, "의안번호"),
-                "의안명": title,
-                # 새/구 스키마 모두 대응
+                "의안명": safe_bill_title(bill),
                 "제안자구분": safe_field(bill, "제안자구분", "제안자"),
                 "제안일자": safe_field(bill, "제안일자"),
                 "의결일자": safe_field(bill, "의결일자"),
@@ -433,18 +429,31 @@ try:
 
         bill_df = pd.DataFrame(rows)
 
-        # ✅ 날짜 파싱: 빈값/이상값 있어도 죽지 않게
-        if "제안일자" in bill_df.columns:
-            dt = pd.to_datetime(bill_df["제안일자"], errors="coerce")
-            bill_df["제안일자"] = dt.dt.strftime("%Y-%m-%d")
-            # 정렬은 datetime 기준(문자열 정렬 방지)
-            bill_df["_제안일자_dt"] = dt
-            bill_df = bill_df.sort_values("_제안일자_dt", ascending=False).drop(columns=["_제안일자_dt"])
-        else:
-            bill_df = bill_df.sort_values("수집일시", ascending=False)
+        # 날짜 파싱 (안전)
+        bill_df["제안일자_dt"] = pd.to_datetime(bill_df["제안일자"], errors="coerce")
 
-        # (기존 필터 로직이 있다면 여기 아래에서 그대로 적용해도 됨)
+        # --------------------
+        # 🔍 필터 적용 (여기가 핵심)
+        # --------------------
+        if selected_bill != '전체':
+            bill_df["의안명_순수"] = bill_df["의안명"].apply(
+                lambda x: x.split("(")[0].strip() if isinstance(x, str) else x
+            )
+            bill_df = bill_df[bill_df["의안명_순수"] == selected_bill]
+            bill_df = bill_df.drop(columns=["의안명_순수"])
 
+        if selected_proposer != '전체':
+            bill_df = bill_df[bill_df["제안자구분"] == selected_proposer]
+
+        if selected_status != '전체':
+            bill_df = bill_df[bill_df["심사진행상태"] == selected_status]
+
+        # 정렬
+        bill_df = bill_df.sort_values("제안일자_dt", ascending=False)
+        bill_df["제안일자"] = bill_df["제안일자_dt"].dt.strftime("%Y-%m-%d")
+        bill_df = bill_df.drop(columns=["제안일자_dt"])
+
+        # 출력
         st.dataframe(
             bill_df,
             use_container_width=True,
@@ -454,13 +463,14 @@ try:
 
         st.markdown("""
         <div style="text-align: right; margin-top: 10px;">
-            <a href="https://likms.assembly.go.kr/bill/main.do" target="_blank">의안정보시스템 바로가기</a>
+            <a href="https://likms.assembly.go.kr/bill/main.do" target="_blank">
+                의안정보시스템 바로가기
+            </a>
         </div>
         """, unsafe_allow_html=True)
 
 except Exception as e:
-    st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
-    # ✅ 원인 바로 보이게(디버깅용): Streamlit 화면에 예외 메시지 표시
+    st.warning("📜 법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
     st.caption(f"에러 상세: {type(e).__name__} - {e}")
 
         # 법률안 필터 적용
@@ -685,4 +695,5 @@ except Exception as e:
 
 if __name__ == "__main__":
     main()
+
 
