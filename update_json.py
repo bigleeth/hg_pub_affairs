@@ -24,16 +24,25 @@ def now_kst_str() -> str:
 def normalize_bill_title(title: str) -> str:
     """
     - NFKC 정규화
+    - '계류의안', '처리의안' 같은 접두어 제거
     - 괄호 블록 전부 제거: (대안)(OO의원 등) 등 여러 개도 제거
     - 공백 정리
     """
     if not title:
         return ""
+
     t = unicodedata.normalize("NFKC", title).strip()
-    t = re.sub(r"\s*\([^)]*\)", "", t).strip()  # 괄호 전부 제거
+
+    # ✅ 접두어 제거 (td[1]에 붙어오는 케이스 대응)
+    # 필요하면 접두어를 더 추가해도 됨.
+    t = re.sub(r"^(계류의안|처리의안)\s+", "", t)
+
+    # ✅ 괄호 전부 제거 (여러 괄호도 싹 제거)
+    t = re.sub(r"\s*\([^)]*\)", "", t)
+
+    # 공백 정리
     t = re.sub(r"\s+", " ", t).strip()
     return t
-
 
 # =========================================================
 # 1) 국회의원 정보 수집
@@ -497,3 +506,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
