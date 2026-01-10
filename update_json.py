@@ -24,7 +24,7 @@ def now_kst_str() -> str:
 def normalize_bill_title(title: str) -> str:
     """
     - NFKC 정규화
-    - '계류의안', '처리의안' 같은 접두어 제거
+    - '계류의안', '처리의안' 접두어 제거
     - 괄호 블록 전부 제거: (대안)(OO의원 등) 등 여러 개도 제거
     - 공백 정리
     """
@@ -32,17 +32,15 @@ def normalize_bill_title(title: str) -> str:
         return ""
 
     t = unicodedata.normalize("NFKC", title).strip()
-
-    # ✅ 접두어 제거 (td[1]에 붙어오는 케이스 대응)
-    # 필요하면 접두어를 더 추가해도 됨.
     t = re.sub(r"^(계류의안|처리의안)\s+", "", t)
-
-    # ✅ 괄호 전부 제거 (여러 괄호도 싹 제거)
     t = re.sub(r"\s*\([^)]*\)", "", t)
-
-    # 공백 정리
     t = re.sub(r"\s+", " ", t).strip()
     return t
+
+
+def safe_text(el) -> str:
+    return el.get_text(" ", strip=True) if el else ""
+
 
 # =========================================================
 # 1) 국회의원 정보 수집
@@ -57,7 +55,6 @@ def collect_members():
         "Connection": "keep-alive",
     }
 
-    # (이전 코드 그대로) - 필요하면 멤버 추가/수정
     members = [
         ("김영진", "KIMYOUNGJIN"),
         ("정태호", "JUNGTAEHO"),
@@ -185,8 +182,13 @@ def collect_members():
         except Exception as e:
             print(f"⚠️ [국회의원] {name} 실패: {e}")
             all_member_data.append({
-                "국회의원": {"이름": name, "정당": party_mapping.get(name, "정보 없음"),
-                          "당선횟수": "정보 없음", "선거구": "정보 없음", "소속위원회": "정보 없음"},
+                "국회의원": {
+                    "이름": name,
+                    "정당": party_mapping.get(name, "정보 없음"),
+                    "당선횟수": "정보 없음",
+                    "선거구": "정보 없음",
+                    "소속위원회": "정보 없음"
+                },
                 "보좌관": [], "선임비서관": [], "비서관": [],
                 "메타데이터": {"url": url, "status_code": 0, "수집일시": now_kst_str()},
             })
@@ -198,7 +200,7 @@ def collect_members():
 
 
 # =========================================================
-# 2) 의안정보(LIKMS) 수집 - CSRF 자동 + 정확 제목 매칭
+# 2) 의안정보(LIKMS) 수집 - CSRF 자동 + "검색결과 전부 저장"
 # =========================================================
 LIKMS_REFERER = "https://likms.assembly.go.kr/bill/bi/bill/sch/detailedSchPage.do"
 LIKMS_FIND_URL = "https://likms.assembly.go.kr/bill/bi/bill/sch/findSchPaging.do"
@@ -217,13 +219,11 @@ def likms_prepare_session() -> requests.Session:
         "Accept-Language": "ko-KR,ko;q=0.9",
     })
 
-    # CSRF 메타가 있을 수 있어서 먼저 referer 페이지를 GET
     r = s.get(LIKMS_REFERER, timeout=30)
     r.raise_for_status()
 
     soup = BeautifulSoup(r.text, "html.parser")
 
-    # 일반적으로 _csrf / _csrf_header 메타가 존재
     csrf = soup.find("meta", {"name": "_csrf"})
     csrf_header = soup.find("meta", {"name": "_csrf_header"})
 
@@ -232,10 +232,8 @@ def likms_prepare_session() -> requests.Session:
         header_name = csrf_header["content"].strip() if (csrf_header and csrf_header.get("content")) else "X-CSRF-TOKEN"
         s.headers[header_name] = token
 
-    # findSchPaging.do는 form-urlencoded
     s.headers["Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8"
     s.headers["Accept"] = "text/html, */*; q=0.8"
-
     return s
 
 
@@ -256,7 +254,7 @@ def likms_fetch_by_billname(session: requests.Session, bill_name: str) -> str:
         "mainQuery": "",
         "mainTabType": "",
         "fromMainBillStat": "",
-        "billNm": bill_name,      # ★ 전체 제목 그대로 넣고 아래에서 정확 매칭
+        "billNm": bill_name,
         "nmReSchText": "",
         "billNo": "",
         "representKindCd": "전체",
@@ -285,20 +283,20 @@ def likms_fetch_by_billname(session: requests.Session, bill_name: str) -> str:
     return r.text
 
 
-def likms_parse_and_filter(html: str, target_bill_name: str):
+def likms_parse_all(html: str, keyword: str):
     """
-    - 테이블의 tbody tr을 파싱
-    - 의안명(td[1])에서만 title을 뽑아서 normalize 후 target과 동일한 것만 저장
+    ✅ 필터링 없이 테이블 tbody tr을 전부 파싱하여 저장한다.
+    - 다만, exact_match 여부는 기록해둔다(나중에 UI에서 필터 가능)
     """
     soup = BeautifulSoup(html, "html.parser")
     table = soup.select_one("table")
     if not table:
         return [], []
 
-    target_norm = normalize_bill_title(target_bill_name)
+    target_norm = normalize_bill_title(keyword)
 
-    all_titles_preview = []
-    matched = []
+    preview_titles = []
+    results = []
 
     rows = table.select("tbody tr")
     for tr in rows:
@@ -306,17 +304,17 @@ def likms_parse_and_filter(html: str, target_bill_name: str):
         if len(tds) < 2:
             continue
 
+        # 의안번호
+        bill_no = safe_text(tds[0])
+
+        # 의안명 + billId
         title_td = tds[1]
         raw_title = title_td.get_text(" ", strip=True)
-        all_titles_preview.append(raw_title)
+        preview_titles.append(raw_title)
 
         norm_title = normalize_bill_title(raw_title)
-        if norm_title != target_norm:
-            continue
+        exact_match = (norm_title == target_norm)
 
-        bill_no = tds[0].get_text(strip=True)
-
-        # billId 추출 (onclick: fGoDetail('2212345', ...)
         bill_id = ""
         a = title_td.find("a")
         if a and a.has_attr("onclick"):
@@ -324,26 +322,56 @@ def likms_parse_and_filter(html: str, target_bill_name: str):
             if m:
                 bill_id = m.group(1)
 
-        proposer_kind = tds[2].get_text(strip=True) if len(tds) > 2 else ""
-        propose_date = tds[3].get_text(strip=True) if len(tds) > 3 else ""
-        vote_date = tds[4].get_text(strip=True) if len(tds) > 4 else ""
-        vote_result = tds[5].get_text(strip=True) if len(tds) > 5 else ""
-        status = tds[7].get_text(strip=True) if len(tds) > 7 else ""
+        proposer_kind = safe_text(tds[2]) if len(tds) > 2 else ""
+        propose_date = safe_text(tds[3]) if len(tds) > 3 else ""
+        vote_date = safe_text(tds[4]) if len(tds) > 4 else ""
+        vote_result = safe_text(tds[5]) if len(tds) > 5 else ""
+        reason_text = safe_text(tds[6]) if len(tds) > 6 else ""
+        status = safe_text(tds[7]) if len(tds) > 7 else ""
 
-        matched.append({
+        results.append({
+            "검색어": keyword,
+            "정규화검색어": target_norm,
+            "정확제목매칭여부": exact_match,
+
             "의안번호": bill_no,
             "의안ID": bill_id,
-            "의안명": raw_title,  # 원문 유지 (괄호 포함)
+            "의안명": raw_title,
+            "정규화의안명": norm_title,
+
             "제안자구분": proposer_kind,
             "제안일자": propose_date,
             "의결일자": vote_date,
             "의결결과": vote_result,
+            "제안이유": reason_text,
             "심사진행상태": status,
+
             "상세URL": f"https://likms.assembly.go.kr/bill/bi/bill/detail.do?billId={bill_id}" if bill_id else "",
             "수집일시": now_kst_str(),
         })
 
-    return matched, all_titles_preview
+    return results, preview_titles
+
+
+def dedupe_bills(items: list) -> list:
+    """
+    의안ID가 있으면 의안ID 기준으로 중복 제거.
+    의안ID가 없으면 (의안번호 + 의안명)으로 보조키.
+    """
+    seen = set()
+    out = []
+    for x in items:
+        bill_id = (x.get("의안ID") or "").strip()
+        if bill_id:
+            key = f"ID:{bill_id}"
+        else:
+            key = f"NO:{(x.get('의안번호') or '').strip()}|TITLE:{(x.get('의안명') or '').strip()}"
+
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(x)
+    return out
 
 
 def collect_bills():
@@ -370,21 +398,22 @@ def collect_bills():
     for name in bill_names:
         try:
             html = likms_fetch_by_billname(session, name)
-            matched, preview = likms_parse_and_filter(html, name)
+            rows, preview = likms_parse_all(html, name)
 
             if not preview:
-                print(f"ℹ️ [{name}] 검색 결과(행)가 없습니다. (HTTP 200, 테이블은 있으나 tbody 비었거나 구조변경)")
-            elif not matched:
-                # 검색은 되는데 정확매칭 0건이면 예시 출력
-                ex = preview[:5]
-                print(f"ℹ️ [{name}] 검색은 됐지만 정확제목 매칭 0건. 예시: {ex}")
+                print(f"ℹ️ [{name}] 검색 결과(행)가 없습니다. (HTTP 200, table/tbody 구조 확인 필요)")
             else:
-                print(f"✅ [{name}] {len(matched)}건 저장")
+                # 매칭 여부 통계만 로그로
+                match_cnt = sum(1 for r in rows if r.get("정확제목매칭여부") is True)
+                print(f"✅ [{name}] {len(rows)}건 저장 (정확매칭 {match_cnt}건)")
 
-            all_bills.extend(matched)
+            all_bills.extend(rows)
 
         except Exception as e:
             print(f"⚠️ [의안] {name} 수집 실패: {type(e).__name__} - {e}")
+
+    # ✅ 중복 제거
+    all_bills = dedupe_bills(all_bills)
 
     with open("의안정보검색결과.json", "w", encoding="utf-8") as f:
         json.dump(all_bills, f, ensure_ascii=False, indent=2)
@@ -506,4 +535,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
