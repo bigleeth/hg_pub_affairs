@@ -230,10 +230,11 @@ def parse_findSch_response(resp: requests.Response):
     html = resp.text
     soup = BeautifulSoup(html, "html.parser")
 
-    # 흔한 케이스: tr.mono 또는 tbody tr
-    rows = soup.select("tr.mono")
+    rows = soup.select("#sch_list_sect table tbody tr")
+    
     if not rows:
-        rows = soup.select("tbody tr")
+        print(f"ℹ️ [{bill_name_exact}] 검색 결과(행)가 없습니다. (URL 접속은 성공)")
+        return []
 
     parsed = []
     for tr in rows:
@@ -581,6 +582,7 @@ final_result = {
 with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 print("✅ 소위원회 정보 저장 완료")
+
 
 
 
