@@ -211,10 +211,10 @@ def collect_bill_info(bill_name: str):
         bill_title = title_td.get_text(" ", strip=True)
 
         # ✅ 화이트리스트 필터: 정확히 이 법률명만 저장
-        if bill_title != bill_name:
+        if normalize_title(bill_title) != normalize_title(bill_name):
             continue
 
-        bill_id = ""
+bill_id = ""
         a = title_td.find("a")
         if a and a.has_attr("onclick"):
             m = re.search(r"fGoDetail\('([^']+)'", a["onclick"])
@@ -411,6 +411,7 @@ final_result = {
 with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 print("✅ 소위원회 정보 저장 완료")
+
 
 
 
