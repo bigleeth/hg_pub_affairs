@@ -292,6 +292,23 @@ def collect_bill_info(bill_name: str):
 
     return bills
 
+def dump_debug(keyword: str, html: str):
+    # Actions 로그에 핵심만 찍기
+    print(f"--- DEBUG HTML HEAD ({keyword}) ---")
+    print(html[:1500])  # 앞부분
+    print("... (snip) ...")
+    print(html[-1500:]) # 뒷부분
+
+    # HTML 안에 숨겨진 API 힌트(ajax url) 찾기
+    for pat in ["findSch", "paging", "ajax", "search", "resultList", "X-Requested-With"]:
+        if pat.lower() in html.lower():
+            print(f"🔎 hint contains: {pat}")
+
+if not rows:
+    print(f"ℹ️ [{keyword}] 검색 결과(행)가 없습니다. (URL 접속은 성공)")
+    dump_debug(keyword, r.text)
+    return []
+
 
 # ✅ 이 법률들만 저장(사용자 요구 반영)
 bill_names = [
@@ -444,6 +461,7 @@ final_result = {
 with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 print("✅ 소위원회 정보 저장 완료")
+
 
 
 
