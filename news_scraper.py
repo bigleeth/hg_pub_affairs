@@ -14,14 +14,14 @@ client_secret = "efT6rgzJRG"
 
 # === Keywords to search ===
 keywords = [
-    "이재명", "국회", "본회의", "재경위", "재정경제기획위원회", "정무위", "임이자", "박수영", "정태호",
+    "이재명", "국회", "본회의", "재경위", "재정경제기획위원회", "정무위", "임이자", "박수영", "정태호", "오늘의 주요일정", "오늘의 국회일정", "세종풍향계", "세종25시", "관가는 지금", "관가", "관료", "관가뒷담", "관가 인사이드"
     "재경부", "기획처", "금융위", "수출입은행", "산업은행", "기업은행", "무역보험공사", 
     "ODA", "EDCF", "공급망", "대미투자", "전략수출금융기금", "동남권투자공사", "지방이전", "총액인건비", "남북협력기금"
 ]
 
 # === Time range: from 18:00 yesterday to now ===
 now = datetime.now()
-start_time = (now - timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
+start_time = (now - timedelta(days=1)).replace(hour=12, minute=0, second=0, microsecond=0)
 
 # === Function to clean HTML tags ===
 def clean_html(text):
@@ -33,7 +33,7 @@ news_df = pd.DataFrame(columns=["Keyword", "Title", "Original Link", "Link", "De
 # === Scrape Naver News API for each keyword ===
 for keyword in keywords:
     query = urllib.parse.quote(keyword)
-    display = 50
+    display = 30
     start = 1
     sort = "date"
 
