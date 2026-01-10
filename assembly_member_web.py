@@ -333,90 +333,134 @@ def main():
     districts = ['전체'] + sorted(df['선거구'].unique().tolist())
     selected_district = st.sidebar.selectbox('선거구', districts)
     
-    # 법률안 필터
-    st.sidebar.subheader("법률안 필터")
-    try:
-        with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
-            bill_data = json.load(f)
-            
-        # 법률안 이름 목록 추출 (괄호 안의 개인 이름 제외)
-        bill_names = []
+    # =========================
+# 법률안 필터 (사이드바)
+# =========================
+st.sidebar.subheader("법률안 필터")
+
+# ✅ 기본값을 무조건 먼저 만들어 둔다 (UnboundLocalError 방지)
+selected_bill = "전체"
+selected_proposer = "전체"
+selected_status = "전체"
+
+bill_data = []
+bill_names = []
+proposer_types = ["전체"]
+status_types = ["전체"]
+
+def safe_bill_title(bill) -> str:
+    """의안명 필드가 str/dict 어떤 형태든 안전하게 텍스트만 반환"""
+    v = bill.get("의안명", "")
+    if isinstance(v, dict):
+        return v.get("text", "") or ""
+    return v or ""
+
+def pure_title(title: str) -> str:
+    """괄호 이전까지만(개인명/대안 등 부가정보 제거)"""
+    if not isinstance(title, str):
+        return ""
+    return title.split("(")[0].strip() if "(" in title else title.strip()
+
+try:
+    with open("의안정보검색결과.json", "r", encoding="utf-8") as f:
+        bill_data = json.load(f) or []
+
+    if bill_data:
+        # 법률안 이름 목록
+        names_set = set()
         for bill in bill_data:
-            bill_name = bill['의안명']['text']
-            # 괄호 앞의 법률안 이름만 추출
-            if '(' in bill_name:
-                bill_name = bill_name.split('(')[0].strip()
-            if bill_name not in bill_names:
-                bill_names.append(bill_name)
-        bill_names = sorted(bill_names)
-        selected_bill = st.sidebar.selectbox('법률안', ['전체'] + bill_names)
-        
-        # 제안자구분 필터
-        proposer_types = ['전체'] + sorted(list(set(bill['제안자구분'] for bill in bill_data)))
-        selected_proposer = st.sidebar.selectbox('제안자구분', proposer_types)
-        
-        # 심사진행상태 필터
-        status_types = ['전체'] + sorted(list(set(bill['심사진행상태'] for bill in bill_data)))
-        selected_status = st.sidebar.selectbox('심사진행상태', status_types)
-        
-    except Exception as e:
-        st.sidebar.warning("법률안 필터 데이터를 불러오는 중 오류가 발생했습니다.")
-    
-    # 필터링 적용
-    filtered_df = df.copy()  # 원본 데이터프레임 복사
-    if selected_party != '전체':
-        filtered_df = filtered_df[filtered_df['정당'] == selected_party]
-    if selected_committee != '전체':
-        filtered_df = filtered_df[filtered_df['소속위원회'] == selected_committee]
-    if selected_district != '전체':
-        filtered_df = filtered_df[filtered_df['선거구'] == selected_district]
-    
-    # 데이터 표시
-    st.dataframe(
-        filtered_df,
-        use_container_width=True,
-        hide_index=True,
-        height=500,
-        column_config={
-            "URL": st.column_config.LinkColumn("URL"),
-            "수집일시": st.column_config.DatetimeColumn("수집일시")
-        }
-    )
-    
-    # 국회 바로가기 링크 추가
-    st.markdown("""
-    <div style="text-align: right; margin-top: 10px;">
-        <a href="https://www.assembly.go.kr/" target="_blank">국회 바로가기</a>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # 법률안 발의내역 표시
-    st.markdown("### 📜 법률안 발의내역")
-    
-    try:
-        with open('의안정보검색결과.json', 'r', encoding='utf-8') as f:
-            bill_data = json.load(f)
-    
-        if not bill_data:
-            st.info("의안정보검색결과.json 파일이 비어있습니다.")
-        else:
-            def safe_bill_title(bill):
-                v = bill.get("의안명", "")
-                if isinstance(v, dict):
-                    return v.get("text", "")
-                return v or ""
-    
-            def safe_field(bill, *keys, default=""):
-                for k in keys:
-                    if k in bill and bill[k] is not None:
-                        return bill[k]
-                return default
-    
-            rows = []
-            for bill in bill_data:
-                rows.append({
+            t = pure_title(safe_bill_title(bill))
+            if t:
+                names_set.add(t)
+        bill_names = sorted(names_set)
+
+        # 제안자구분 / 심사진행상태 목록
+        proposer_set = set()
+        status_set = set()
+        for bill in bill_data:
+            if bill.get("제안자구분"):
+                proposer_set.add(bill.get("제안자구분"))
+            # 혹시 예전 키("제안자")만 있는 케이스 대비
+            elif bill.get("제안자"):
+                proposer_set.add(bill.get("제안자"))
+
+            if bill.get("심사진행상태"):
+                status_set.add(bill.get("심사진행상태"))
+
+        proposer_types = ["전체"] + sorted(proposer_set)
+        status_types = ["전체"] + sorted(status_set)
+
+    # ✅ 옵션이 비어도 selectbox는 최소 ["전체"]만 들어가게 안전 처리
+    selected_bill = st.sidebar.selectbox("법률안", ["전체"] + bill_names, index=0)
+    selected_proposer = st.sidebar.selectbox("제안자구분", proposer_types, index=0)
+    selected_status = st.sidebar.selectbox("심사진행상태", status_types, index=0)
+
+except Exception as e:
+    st.sidebar.warning("법률안 필터 데이터를 불러오는 중 오류가 발생했습니다.")
+    st.sidebar.caption(f"에러 상세: {type(e).__name__} - {e}")
+    # ✅ 여기서도 selected_*는 이미 기본값('전체')로 존재함
+
+
+# =========================
+# (기존) 필터링 적용 - 의원 데이터 df
+# =========================
+filtered_df = df.copy()
+if selected_party != "전체":
+    filtered_df = filtered_df[filtered_df["정당"] == selected_party]
+if selected_committee != "전체":
+    filtered_df = filtered_df[filtered_df["소속위원회"] == selected_committee]
+if selected_district != "전체":
+    filtered_df = filtered_df[filtered_df["선거구"] == selected_district]
+
+st.dataframe(
+    filtered_df,
+    use_container_width=True,
+    hide_index=True,
+    height=500,
+    column_config={
+        "URL": st.column_config.LinkColumn("URL"),
+        "수집일시": st.column_config.DatetimeColumn("수집일시"),
+    },
+)
+
+st.markdown(
+    """
+<div style="text-align: right; margin-top: 10px;">
+  <a href="https://www.assembly.go.kr/" target="_blank">국회 바로가기</a>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# =========================
+# 법률안 발의내역 표시
+# =========================
+st.markdown("### 📜 법률안 발의내역")
+
+def safe_field(bill, *keys, default=""):
+    for k in keys:
+        if k in bill and bill[k] is not None:
+            return bill[k]
+    return default
+
+try:
+    # bill_data가 위에서 이미 로드되었을 수도 있지만,
+    # 혹시 sidebar try가 실패했을 때를 대비해 여기서도 안전 로드
+    if not bill_data:
+        with open("의안정보검색결과.json", "r", encoding="utf-8") as f:
+            bill_data = json.load(f) or []
+
+    if not bill_data:
+        st.info("의안정보검색결과.json 파일이 비어있습니다.")
+    else:
+        rows = []
+        for bill in bill_data:
+            title = safe_bill_title(bill)
+            rows.append(
+                {
                     "의안번호": safe_field(bill, "의안번호"),
-                    "의안명": safe_bill_title(bill),
+                    "의안명": title,
                     "제안자구분": safe_field(bill, "제안자구분", "제안자"),
                     "제안일자": safe_field(bill, "제안일자"),
                     "의결일자": safe_field(bill, "의결일자"),
@@ -425,84 +469,49 @@ def main():
                     "의안ID": safe_field(bill, "의안ID"),
                     "상세URL": safe_field(bill, "상세URL"),
                     "수집일시": safe_field(bill, "수집일시"),
-                })
-    
-            bill_df = pd.DataFrame(rows)
-    
-            # 날짜 파싱 (안전)
-            bill_df["제안일자_dt"] = pd.to_datetime(bill_df["제안일자"], errors="coerce")
-    
-            # --------------------
-            # 🔍 필터 적용 (여기가 핵심)
-            # --------------------
-            if selected_bill != '전체':
-                bill_df["의안명_순수"] = bill_df["의안명"].apply(
-                    lambda x: x.split("(")[0].strip() if isinstance(x, str) else x
-                )
-                bill_df = bill_df[bill_df["의안명_순수"] == selected_bill]
-                bill_df = bill_df.drop(columns=["의안명_순수"])
-    
-            if selected_proposer != '전체':
-                bill_df = bill_df[bill_df["제안자구분"] == selected_proposer]
-    
-            if selected_status != '전체':
-                bill_df = bill_df[bill_df["심사진행상태"] == selected_status]
-    
-            # 정렬
-            bill_df = bill_df.sort_values("제안일자_dt", ascending=False)
-            bill_df["제안일자"] = bill_df["제안일자_dt"].dt.strftime("%Y-%m-%d")
-            bill_df = bill_df.drop(columns=["제안일자_dt"])
-    
-            # 출력
-            st.dataframe(
-                bill_df,
-                use_container_width=True,
-                hide_index=True,
-                height=350
+                }
             )
-    
-            st.markdown("""
-            <div style="text-align: right; margin-top: 10px;">
-                <a href="https://likms.assembly.go.kr/bill/main.do" target="_blank">
-                    의안정보시스템 바로가기
-                </a>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    except Exception as e:
-        st.warning("📜 법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
-        st.caption(f"에러 상세: {type(e).__name__} - {e}")
 
-        # 법률안 필터 적용
-        if selected_bill != '전체':
-            # 괄호 앞의 법률안 이름만 비교
-            bill_df['의안명_순수'] = bill_df['의안명'].apply(lambda x: x.split('(')[0].strip() if '(' in x else x)
-            bill_df = bill_df[bill_df['의안명_순수'] == selected_bill]
-            bill_df = bill_df.drop('의안명_순수', axis=1)
-        if selected_proposer != '전체':
-            bill_df = bill_df[bill_df['제안자구분'] == selected_proposer]
-        if selected_status != '전체':
-            bill_df = bill_df[bill_df['심사진행상태'] == selected_status]
-        
-        # 제안일자 기준으로 내림차순 정렬
-        bill_df['제안일자'] = pd.to_datetime(bill_df['제안일자']).dt.strftime('%Y-%m-%d')
-        bill_df = bill_df.sort_values('제안일자', ascending=False)
-        
-        st.dataframe(
-            bill_df,
-            use_container_width=True,
-            hide_index=True,
-            height=350
+        bill_df = pd.DataFrame(rows)
+
+        # 날짜 파싱(실패해도 NaT로 처리)
+        bill_df["제안일자_dt"] = pd.to_datetime(bill_df["제안일자"], errors="coerce")
+
+        # --------------------
+        # 🔍 필터 적용
+        # --------------------
+        if selected_bill != "전체":
+            bill_df["의안명_순수"] = bill_df["의안명"].apply(pure_title)
+            bill_df = bill_df[bill_df["의안명_순수"] == selected_bill].drop(columns=["의안명_순수"])
+
+        if selected_proposer != "전체":
+            bill_df = bill_df[bill_df["제안자구분"] == selected_proposer]
+
+        if selected_status != "전체":
+            bill_df = bill_df[bill_df["심사진행상태"] == selected_status]
+
+        # 정렬 + 표시용 날짜 형식
+        bill_df = bill_df.sort_values("제안일자_dt", ascending=False)
+        bill_df["제안일자"] = bill_df["제안일자_dt"].dt.strftime("%Y-%m-%d")
+        bill_df = bill_df.drop(columns=["제안일자_dt"])
+
+        st.dataframe(bill_df, use_container_width=True, hide_index=True, height=350)
+
+        st.markdown(
+            """
+<div style="text-align: right; margin-top: 10px;">
+  <a href="https://likms.assembly.go.kr/bill/main.do" target="_blank">
+    의안정보시스템 바로가기
+  </a>
+</div>
+""",
+            unsafe_allow_html=True,
         )
-        
-        # 의안정보시스템 링크 추가
-        st.markdown("""
-        <div style="text-align: right; margin-top: 10px;">
-            <a href="https://likms.assembly.go.kr/bill/main.do" target="_blank">의안정보시스템 바로가기</a>
-        </div>
-        """, unsafe_allow_html=True)
-    except Exception as e:
-        st.warning("법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
+
+except Exception as e:
+    st.warning("📜 법률안 발의내역 데이터를 불러오는 중 오류가 발생했습니다.")
+    st.caption(f"에러 상세: {type(e).__name__} - {e}")
+
     
     # 소위원회 정보 표시
     st.markdown("### 🐮 소위원회 정보")
@@ -695,6 +704,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
