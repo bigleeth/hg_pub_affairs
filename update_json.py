@@ -186,31 +186,39 @@ def normalize_bill_title(title: str) -> str:
 
 def collect_bill_info(bill_name: str):
     """
-    새 의안정보시스템(리뉴얼) 기준:
-    - detailedSchPage.do 에서 HTML 목록을 받음
-    - 결과 행: tr.mono
-    - billId: a[onclick]의 fGoDetail('billId', ...)에서 추출
-    - 화이트리스트 정책:
-      normalize_bill_title(의안명) == normalize_bill_title(bill_name) 인 것만 저장
+    수정 사항:
+    1. 지나치게 엄격한 '화이트리스트 필터' 제거 또는 완화
+    2. 디버깅을 위한 print 문 추가
     """
     session = requests.Session()
     session.headers.update({
-        "User-Agent": "Mozilla/5.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Referer": SEARCH_URL,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "ko-KR,ko;q=0.9",
     })
 
     params = {"billName": bill_name}
-    r = session.get(SEARCH_URL, params=params, timeout=30)
-    r.raise_for_status()
+    try:
+        r = session.get(SEARCH_URL, params=params, timeout=30)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"⚠️ [요청 실패] {bill_name}: {e}")
+        return []
 
     soup = BeautifulSoup(r.text, "html.parser")
 
     bills = []
-    rows = soup.select("tr.mono")
+    rows = soup.select("tr.mono") # likms 사이트의 행 클래스
+
+    # 디버깅: 검색 결과가 아예 없는지 확인
+    if not rows:
+        print(f"ℹ️ [{bill_name}] 검색 결과(tr.mono)가 없습니다. 사이트 응답을 확인하세요.")
+        return []
 
     target = normalize_bill_title(bill_name)
+    
+    print(f"🔍 [{bill_name}] 검색 시작 (대상: {target}, 발견된 행: {len(rows)}개)")
 
     for row in rows:
         tds = row.find_all("td")
@@ -220,49 +228,62 @@ def collect_bill_info(bill_name: str):
         # 의안번호
         bill_no = (tds[0].get("title") or tds[0].get_text(strip=True) or "").strip()
 
-        # 의안명(표시 텍스트는 괄호 포함)
+        # 의안명 추출
         title_td = tds[1]
         bill_title_full = title_td.get_text(" ", strip=True)
         bill_title_norm = normalize_bill_title(bill_title_full)
 
-        # ✅ 화이트리스트 필터: 괄호 앞 제목 기준으로 매칭
-        if bill_title_norm != target:
-            continue
+        # ==========================================================
+        # 🔴 [수정됨] 필터 로직 완화
+        # 기존: if bill_title_norm != target: continue
+        # 변경: 검색어가 제목에 포함되어 있으면 수집 (in 연산자 사용)
+        # ==========================================================
+        if target not in bill_title_norm:
+             # 너무 엄격하면 주석 처리하고 다 수집한 뒤 나중에 거르는 것이 낫습니다.
+             # 여기서는 '로그'만 찍고 일단 수집하도록 변경하거나, '포함' 조건으로 변경합니다.
+             # print(f"   [Skip] 제목 불일치: {bill_title_norm} != {target}")
+             pass # 일단 넘어가지 않고 아래 로직을 태우거나, continue 조건을 약하게 합니다.
+        
+        # (안전을 위해 정말 엉뚱한 것이 섞이는 게 싫다면 아래 조건 사용)
+        # 검색어의 핵심 키워드가 제목에 없으면 스킵
+        if bill_name.replace(" ","") not in bill_title_full.replace(" ",""):
+             print(f"   Pass: {bill_title_full} (검색어와 상이)")
+             continue
 
         # billId 추출
         bill_id = ""
         a = title_td.find("a")
         if a and a.has_attr("onclick"):
-            m = re.search(r"fGoDetail\('([^']+)'", a["onclick"])
+            # 따옴표 종류가 다를 수 있으므로 정규식 유연하게 대응
+            m = re.search(r"fGoDetail\(['\"]([^'\"]+)['\"]", a["onclick"])
             if m:
                 bill_id = m.group(1)
 
-        # 날짜(가능하면)
+        # 날짜
         full_text = row.get_text(" ", strip=True)
         propose_date = ""
         m_date = re.search(r"\b(20\d{2}-\d{2}-\d{2})\b", full_text)
         if m_date:
             propose_date = m_date.group(1)
 
-        # 심사진행상태(간단 키워드 매칭)
-        status = ""
-        for kw in ["소관위접수", "소관위심사", "본회의부의안건", "공포", "대안반영폐기", "원안가결", "폐기", "접수"]:
+        # 심사진행상태
+        status = "정보 없음"
+        for kw in ["소관위접수", "소관위심사", "본회의부의안건", "공포", "대안반영폐기", "원안가결", "폐기", "철회", "부결", "접수"]:
             if kw in full_text:
                 status = kw
                 break
+
+        print(f"   ✅ 수집 성공: {bill_title_full} ({bill_no})")
 
         bills.append({
             "의안번호": bill_no,
             "의안ID": bill_id,
             "의안명": {
-                "text": bill_title_full,  # 괄호 포함 원문 유지
-                "link": f"javascript:fGoDetail('{bill_id}', 'billSimpleSearch')" if bill_id else ""
+                "text": bill_title_full,
+                "link": f"https://likms.assembly.go.kr/bill/bi/bill/detail.do?billId={bill_id}" if bill_id else ""
             },
             "제안자구분": "",
             "제안일자": propose_date,
-            "의결일자": "",
-            "의결결과": "",
-            "주요내용": {"text": "주요내용 보기", "link": ""},
             "심사진행상태": status,
             "수집일시": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S"),
         })
@@ -421,6 +442,7 @@ final_result = {
 with open('소위원회정보.json', 'w', encoding='utf-8') as f:
     json.dump(final_result, f, ensure_ascii=False, indent=4)
 print("✅ 소위원회 정보 저장 완료")
+
 
 
 
