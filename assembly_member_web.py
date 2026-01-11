@@ -80,7 +80,7 @@ st.markdown("""
 
 # 제목
 st.markdown("""
-    <h1 style="margin-bottom: 1rem;">🚀국회 모니터링 - 수은 대외팀🚀</h1>
+    <h1 style="margin-bottom: 1rem;">🚀국회 모니터링 - 대외팀🚀</h1>
 """, unsafe_allow_html=True)
 
 # 데이터 로드 함수
@@ -704,6 +704,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
