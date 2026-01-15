@@ -2,13 +2,11 @@
 
 import os
 import urllib.request
-import urllib.parse
 import pandas as pd
 import json
 import re
 from datetime import datetime, timedelta
 import subprocess
-import pytz
 
 # === Naver OpenAPI credentials ===
 client_id = "pfLKc2NgWoanoRnRDBgx"
@@ -17,7 +15,9 @@ client_secret = "efT6rgzJRG"
 # === Keywords to search ===
 keywords = [
     "이재명", "정상순방", "국회", "본회의", "재경위", "재정경제기획위원회", "정무위", 
-    "정태호", "김영진 의원", "김영환", "김태년", "박홍근", "박민규", "안규백", "안도걸", "오기형", "이소영 의원", "정성호", "정일영", "조승래", "진성준", "최기상",
+    "정태호","김영진 의원", "김영환", "김태년", "박홍근", "박민규", "안규백", "안도걸", "오기형", "이소영 의원", "정성호", "정일영", "조승래", "진성준", "최기상",
+    "송언석", "박수영", "박대출", "박성훈", "유상범", "윤영석", "이인선", "임이자", "최은석", "권영세", "차규근", "천하람"
+    "오늘의 주요일정", "오늘의 국회일정", "세종풍향계", "세종25시", "관가는 지금", "관가", "관료", "관가뒷담", "관가 인사이드"
     "송언석", "박수영", "박대출", "박성훈", "유상범", "윤영석", "이인선", "임이자", "최은석", "권영세", "차규근", "천하람",
     "오늘의 주요일정", "오늘의 국회일정", "세종풍향계", "세종25시", "관가는 지금", "관가", "관료", "관가뒷담", "관가 인사이드",
     "재경부", "기획처", "금융위", "수출입은행", "산업은행", "기업은행", "무역보험공사",
@@ -25,8 +25,8 @@ keywords = [
 ]
 
 # === Time range: from 18:00 yesterday to now ===
-now = datetime.now(pytz.timezone('Asia/Seoul'))  # 서울 타임존으로 현재 시간을 가져옵니다.
-start_time = (now - timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
+now = datetime.now()
+start_time = (now - timedelta(days=1)).replace(hour=12, minute=0, second=0, microsecond=0)
 
 # === Function to clean HTML tags ===
 def clean_html(text):
@@ -56,8 +56,7 @@ for keyword in keywords:
                 pub_date_str = item['pubDate']
                 pub_datetime = datetime.strptime(pub_date_str, "%a, %d %b %Y %H:%M:%S %z")
 
-                # 시간대가 있는 pub_datetime와 비교
-                if pub_datetime >= start_time:
+                if pub_datetime.replace(tzinfo=None) >= start_time:
                     news_df.loc[len(news_df)] = [
                         keyword,
                         clean_html(item['title']),
@@ -92,4 +91,3 @@ if auto_commit:
         print("📤 Changes pushed to GitHub.")
     except Exception as e:
         print("❌ Git push failed:", e)
-ㅍㅍ
