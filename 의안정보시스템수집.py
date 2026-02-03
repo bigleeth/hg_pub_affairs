@@ -73,7 +73,8 @@ bill_names = [
     "한국산업은행법 일부개정법률안",
     "2025년도에 발행하는 첨단전략산업기금채권에 대한 국가보증동의안",
     "중소기업은행법 일부개정법률안",
-    "정부조직법 일부개정법률안"
+    "정부조직법 일부개정법률안",
+    "전략수출금융지원에 관한 법률안"
 ]
 
 all_data = []
@@ -83,3 +84,4 @@ for name in bill_names:
 df = pd.DataFrame(all_data)
 print(df)
 df.to_json("의안정보검색결과.json", orient="records", force_ascii=False, indent=2)
+
