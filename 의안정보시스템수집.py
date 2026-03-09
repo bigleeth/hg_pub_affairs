@@ -80,7 +80,7 @@ bill_names = [
     "기후위기 대응을 위한 탄소중립ㆍ녹색성장 기본법 일부개정법률안",
     "전략수출금융지원에 관한 법률안",
     "한미 조선산업 협력 및 지원 특별법안",
-    "한미 전략적 투자 관리를 위한 특별법안"
+    "한미 전략적 투자 관리를 위한 특별법안",
 ]
 
 all_data = []
@@ -90,6 +90,7 @@ for name in bill_names:
 df = pd.DataFrame(all_data)
 print(df)
 df.to_json("의안정보검색결과.json", orient="records", force_ascii=False, indent=2)
+
 
 
 
