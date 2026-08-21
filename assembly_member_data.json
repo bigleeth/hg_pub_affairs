@@ -25,7 +25,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/KIMYOUNGJIN",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:34:59"
+      "수집일시": "2026-08-22 07:31:32"
     }
   },
   {
@@ -54,7 +54,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/JUNGTAEHO",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:00"
+      "수집일시": "2026-08-22 07:31:34"
     }
   },
   {
@@ -83,7 +83,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/KIMYOUNGWHAN",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:02"
+      "수집일시": "2026-08-22 07:31:36"
     }
   },
   {
@@ -112,7 +112,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/KIMTAENYEON",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:04"
+      "수집일시": "2026-08-22 07:31:38"
     }
   },
   {
@@ -140,7 +140,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/CHOINCHEUL",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:05"
+      "수집일시": "2026-08-22 07:31:40"
     }
   },
   {
@@ -169,7 +169,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/PARKMINKYU",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:07"
+      "수집일시": "2026-08-22 07:31:42"
     }
   },
   {
@@ -198,7 +198,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/AHNGYUBACK",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:09"
+      "수집일시": "2026-08-22 07:31:44"
     }
   },
   {
@@ -207,7 +207,7 @@
       "정당": "더불어민주당",
       "당선횟수": "초선",
       "선거구": "전남광주통합특별시 동구남구을",
-      "소속위원회": "국회운영위원회, 예산결산특별위원회, 재정경제기획위원회"
+      "소속위원회": "예산결산특별위원회, 재정경제기획위원회"
     },
     "보좌관": [
       "김현호",
@@ -224,7 +224,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/AHNDOGEOL",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:11"
+      "수집일시": "2026-08-22 07:31:46"
     }
   },
   {
@@ -251,7 +251,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/OHGIHYOUNG",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:12"
+      "수집일시": "2026-08-22 07:31:48"
     }
   },
   {
@@ -280,7 +280,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/LEESOYOUNG",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:14"
+      "수집일시": "2026-08-22 07:31:49"
     }
   },
   {
@@ -308,7 +308,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/JUNGSUNGHO",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:16"
+      "수집일시": "2026-08-22 07:31:51"
     }
   },
   {
@@ -336,7 +336,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/CHUNGILYOUNG",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:17"
+      "수집일시": "2026-08-22 07:31:53"
     }
   },
   {
@@ -365,7 +365,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/JOSEOUNGLAE",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:19"
+      "수집일시": "2026-08-22 07:31:55"
     }
   },
   {
@@ -394,7 +394,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/JINSUNGJOON",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:21"
+      "수집일시": "2026-08-22 07:31:57"
     }
   },
   {
@@ -423,7 +423,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/SONGEONSEOG",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:23"
+      "수집일시": "2026-08-22 07:31:59"
     }
   },
   {
@@ -452,7 +452,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/PARKSOOYOUNG",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:24"
+      "수집일시": "2026-08-22 07:32:01"
     }
   },
   {
@@ -468,19 +468,19 @@
       "최두식"
     ],
     "선임비서관": [
-      "이상조",
+      "김현석",
       "정진효"
     ],
     "비서관": [
+      "이상조",
       "김세아",
       "심효은",
-      "강성중",
-      "우정인"
+      "강성중"
     ],
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/PARKDAECHUL",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:26"
+      "수집일시": "2026-08-22 07:32:03"
     }
   },
   {
@@ -508,7 +508,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/PARKSUNGHOON",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:27"
+      "수집일시": "2026-08-22 07:32:04"
     }
   },
   {
@@ -537,7 +537,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/YOOSANGBUM",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:29"
+      "수집일시": "2026-08-22 07:32:06"
     }
   },
   {
@@ -564,7 +564,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/YOONYOUNGSEOK",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:31"
+      "수집일시": "2026-08-22 07:32:08"
     }
   },
   {
@@ -593,7 +593,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/LEEINSEON",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:32"
+      "수집일시": "2026-08-22 07:32:10"
     }
   },
   {
@@ -622,7 +622,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/LIMLEEJA",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:34"
+      "수집일시": "2026-08-22 07:32:12"
     }
   },
   {
@@ -651,7 +651,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/CHOIEUNSEOK",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:35"
+      "수집일시": "2026-08-22 07:32:13"
     }
   },
   {
@@ -679,7 +679,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/CHAGYUGEUN",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:37"
+      "수집일시": "2026-08-22 07:32:15"
     }
   },
   {
@@ -708,7 +708,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/CHUNHARAM",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:38"
+      "수집일시": "2026-08-22 07:32:17"
     }
   },
   {
@@ -737,7 +737,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/CHOIKISANG",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:40"
+      "수집일시": "2026-08-22 07:32:19"
     }
   },
   {
@@ -767,7 +767,7 @@
     "메타데이터": {
       "url": "https://www.assembly.go.kr/members/22nd/KWONYOUNGSE",
       "status_code": 200,
-      "수집일시": "2026-08-21 07:35:42"
+      "수집일시": "2026-08-22 07:32:21"
     }
   }
 ]
